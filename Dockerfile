@@ -19,6 +19,9 @@ WORKDIR /workspace/cli
 RUN pnpm config set global-bin-dir /usr/local/bin && pnpm install && pnpm build && pnpm link --global
 
 # Set environment
+WORKDIR /workspace/api-loader
+RUN pnpm install
+
 ENV FLUXER_PLUGIN_DIR=/plugins
 ENV NODE_ENV=production
 WORKDIR /workspace
