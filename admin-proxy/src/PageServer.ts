@@ -36,13 +36,13 @@ export async function renderPluginPage(
 
     let root: any = null;
     try {
-      const upstreamRes = await fetch(`${upstreamUrl}/users`, { headers });
+      const upstreamRes = await fetch(`${upstreamUrl}/admin/users`, { headers });
       
       if (upstreamRes.ok) {
         const layoutHtml = await upstreamRes.text();
         root = parse(layoutHtml);
       } else if (upstreamRes.status === 401 || upstreamRes.status === 403) {
-        return c.redirect(`${upstreamUrl}/login`);
+        return c.redirect(`/admin/login`);
       }
     } catch (fetchErr) {
       console.warn(`[Admin Proxy] Upstream admin offline, using fallback layout:`, fetchErr);
