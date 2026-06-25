@@ -58,6 +58,42 @@ export default createRoute({
         // Fallback gracefully if database columns do not exist in schema
       }
 
+      // Fallback: Check verified encora.it domain connection in standard connections table
+      try {
+        const connectionService = ctx.get('connectionService') as any;
+        if (connectionService) {
+          const bigIntUserId = BigInt(userId) as any;
+          const connections = await connectionService.getConnectionsForUser(bigIntUserId);
+          if (Array.isArray(connections)) {
+            const encoraConn = connections.find((c: any) => 
+              c.connection_type === 'domain' && 
+              c.verified && 
+              (c.name.includes('encora.it/traders/') || c.name.startsWith('encora.it/'))
+            );
+            if (encoraConn) {
+              let slug = '';
+              if (encoraConn.name.includes('encora.it/traders/')) {
+                slug = encoraConn.name.split('encora.it/traders/')[1] || '';
+              } else if (encoraConn.name.includes('encora.it/')) {
+                slug = encoraConn.name.split('encora.it/')[1] || '';
+              }
+              
+              const badgeUrl = 'https://encora.it/images/favicon.png';
+              const hasEncora = userBadges.some(b => b.iconUrl === badgeUrl);
+              if (!hasEncora) {
+                userBadges.unshift({
+                  iconUrl: badgeUrl,
+                  tooltip: 'Linked Encora Profile',
+                  url: `https://encora.it/traders/${slug}`
+                });
+              }
+            }
+          }
+        }
+      } catch (err) {
+        // Fallback gracefully
+      }
+
       return ctx.json({
         userId,
         badges: userBadges

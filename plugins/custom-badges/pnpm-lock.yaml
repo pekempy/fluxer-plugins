@@ -9,8 +9,8 @@ importers:
   .:
     dependencies:
       '@pekempy/fluxer-plugin-sdk':
-        specifier: link:../../fluxer_plugins/sdk
-        version: link:../../fluxer_plugins/sdk
+        specifier: link:../../sdk
+        version: link:../../sdk
       hono:
         specifier: ^4.12.2
         version: 4.12.27
