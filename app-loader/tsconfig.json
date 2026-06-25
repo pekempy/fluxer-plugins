@@ -12,8 +12,8 @@
 		"isolatedModules": true,
 		"verbatimModuleSyntax": true,
 		"paths": {
-			"@app/*": ["../../fluxer_app/src/*"],
-			"@fluxer/*": ["../../packages/*"]
+			"@app/*": ["../../fluxer-fork/fluxer_app/src/*"],
+			"@fluxer/*": ["../../fluxer-fork/packages/*"]
 		}
 	},
 	"include": ["**/*.ts", "**/*.tsx"],
