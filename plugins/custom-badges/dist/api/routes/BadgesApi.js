@@ -31,18 +31,23 @@ export default createRoute({
             const userBadges = [...(badgesMap[userId] || [])];
             // Retrieve existing Encora badge database record if present
             try {
-                const userService = ctx.get('userService');
-                if (userService) {
-                    const user = await userService.getUserById(userId);
-                    if (user && user.customBadgeUrl) {
-                        const hasEncora = userBadges.some(b => b.iconUrl === user.customBadgeUrl);
-                        if (!hasEncora) {
-                            userBadges.unshift({
-                                iconUrl: user.customBadgeUrl,
-                                tooltip: 'Linked Encora Profile',
-                                url: user.customBadgeLink || undefined
-                            });
-                        }
+                const tablesPath = path.resolve(process.cwd(), 'fluxer_api', 'src', 'api', 'Tables.js');
+                const queryExecutionPath = path.resolve(process.cwd(), 'fluxer_api', 'src', 'api', 'database', 'CassandraQueryExecution.js');
+                const { Users } = await import(tablesPath);
+                const { fetchOne } = await import(queryExecutionPath);
+                const bigIntUserId = BigInt(userId);
+                const query = Users.select().where(Users.where.eq('user_id')).limit(1);
+                const userRow = await fetchOne(query, { user_id: bigIntUserId });
+                if (userRow && (userRow.custom_badge_url || userRow.customBadgeUrl)) {
+                    const customBadgeUrl = userRow.custom_badge_url || userRow.customBadgeUrl;
+                    const customBadgeLink = userRow.custom_badge_link || userRow.customBadgeLink;
+                    const hasEncora = userBadges.some(b => b.iconUrl === customBadgeUrl);
+                    if (!hasEncora) {
+                        userBadges.unshift({
+                            iconUrl: customBadgeUrl,
+                            tooltip: 'Linked Encora Profile',
+                            url: customBadgeLink || undefined
+                        });
                     }
                 }
             }
