@@ -1,0 +1,11 @@
+# Ignore node modules and build artifacts
+**/node_modules
+node_modules
+**/dist
+dist
+**/build
+build
+.git
+.github
+.gitignore
+*.md
