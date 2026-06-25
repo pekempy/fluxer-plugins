@@ -1,18 +1,18 @@
 services:
   # Override API to use the plugin loader entrypoint
   api:
-    command: ["./node_modules/.bin/tsx", "fluxer_plugins/api-loader/entry.ts"]
+    command: ["./node_modules/.bin/tsx", "api-loader/entry.ts"]
     environment:
       FLUXER_PLUGIN_DIR: /plugins
       FLUXER_PLUGINS_ENABLED: "true"
     volumes:
       - ./plugins:/plugins:ro
-      - ./fluxer_plugins/api-loader:/usr/src/app/fluxer_plugins/api-loader:ro
-      - ./fluxer_plugins/sdk:/usr/src/app/fluxer_plugins/sdk:ro
+      - ./api-loader:/usr/src/app/fluxer_plugins/api-loader:ro
+      - ./sdk:/usr/src/app/fluxer_plugins/sdk:ro
 
   # Override worker to use the same plugin loader entrypoint
   worker:
-    command: ["./node_modules/.bin/tsx", "fluxer_plugins/api-loader/entry.ts"]
+    command: ["./node_modules/.bin/tsx", "api-loader/entry.ts"]
     environment:
       FLUXER_PLUGIN_DIR: /plugins
       FLUXER_PLUGINS_ENABLED: "true"
@@ -21,8 +21,8 @@ services:
       FLUXER_API_WORKER_ENABLE_VOICE_RECONCILIATION: "true"
     volumes:
       - ./plugins:/plugins:ro
-      - ./fluxer_plugins/api-loader:/usr/src/app/fluxer_plugins/api-loader:ro
-      - ./fluxer_plugins/sdk:/usr/src/app/fluxer_plugins/sdk:ro
+      - ./api-loader:/usr/src/app/fluxer_plugins/api-loader:ro
+      - ./sdk:/usr/src/app/fluxer_plugins/sdk:ro
 
   # Run the original admin panel on a separate internal address
   admin-upstream:
@@ -53,8 +53,8 @@ services:
   # Redirect the default 'admin' service to our plugin proxy sidecar
   admin:
     build:
-      context: ..
-      dockerfile: fluxer_plugins/admin-proxy/Dockerfile
+      context: .
+      dockerfile: admin-proxy/Dockerfile
     environment:
       UPSTREAM_ADMIN_URL: http://admin-upstream:8080
       FLUXER_PLUGIN_DIR: /plugins
@@ -83,6 +83,7 @@ services:
       - ..:/workspace
       - app-assets:/assets
       - ./plugins:/workspace/plugins:ro
+      - .:/workspace/fluxer_plugins:ro
     networks: [fluxer]
 
   app-proxy:
