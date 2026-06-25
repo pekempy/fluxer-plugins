@@ -13,10 +13,10 @@ COPY app-loader/ ./app-loader/
 
 # Install dependencies and build SDK + CLI
 WORKDIR /workspace/sdk
-RUN pnpm install --ignore-workspace && pnpm build
+RUN pnpm install && pnpm build
 
 WORKDIR /workspace/cli
-RUN pnpm install --ignore-workspace && pnpm build && pnpm link --global
+RUN pnpm config set global-bin-dir /usr/local/bin && pnpm install && pnpm build && pnpm link --global
 
 # Set environment
 ENV FLUXER_PLUGIN_DIR=/plugins

@@ -12,11 +12,11 @@ COPY admin-proxy/ ./admin-proxy/
 
 # Navigate to SDK, install dependencies, and build
 WORKDIR /workspace/sdk
-RUN pnpm install --ignore-workspace && pnpm build
+RUN pnpm install && pnpm build
 
 # Navigate to the proxy folder, install dependencies, and compile
 WORKDIR /workspace/admin-proxy
-RUN pnpm install --ignore-workspace
+RUN pnpm install
 RUN pnpm build
 
 # Expose proxy port
