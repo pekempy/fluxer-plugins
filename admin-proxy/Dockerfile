@@ -10,7 +10,11 @@ WORKDIR /workspace
 COPY sdk/ ./sdk/
 COPY admin-proxy/ ./admin-proxy/
 
-# Navigate to the proxy folder, install dependencies ignoring monorepo catalogs, and compile
+# Navigate to SDK, install dependencies, and build
+WORKDIR /workspace/sdk
+RUN pnpm install --ignore-workspace && pnpm build
+
+# Navigate to the proxy folder, install dependencies, and compile
 WORKDIR /workspace/admin-proxy
 RUN pnpm install --ignore-workspace
 RUN pnpm build
