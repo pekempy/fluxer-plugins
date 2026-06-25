@@ -11,12 +11,15 @@ COPY cli/ ./cli/
 COPY api-loader/ ./api-loader/
 COPY app-loader/ ./app-loader/
 
-# Install dependencies and build SDK + CLI
+# Install dependencies and build SDK + CLI + loaders
 WORKDIR /workspace/sdk
 RUN pnpm install && pnpm build
 
 WORKDIR /workspace/cli
 RUN pnpm config set global-bin-dir /usr/local/bin && pnpm install && pnpm build && pnpm link --global
+
+WORKDIR /workspace/api-loader
+RUN pnpm install && pnpm build
 
 # Set environment
 ENV FLUXER_PLUGIN_DIR=/plugins
@@ -30,4 +33,4 @@ CMD ["fluxer-plugin", "dev", "--watch"]
 
 # Production stage: minimal runtime entrypoint
 FROM base AS prod
-CMD ["node", "api-loader/entry.js"]
+CMD ["node", "api-loader/dist/entry.js"]
