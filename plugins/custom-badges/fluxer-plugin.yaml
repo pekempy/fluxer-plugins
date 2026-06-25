@@ -1,0 +1,28 @@
+name: "custom-badges"
+version: "1.0.0"
+description: "Allows custom badges on user profiles (images, tooltips, URLs) managed via the admin dashboard."
+author: "pekempy"
+license: "MIT"
+
+targets:
+  api:
+    routes:
+      - file: "./api/routes/BadgesApi.ts"
+        prefix: "/v1/custom"
+
+  app:
+    components:
+      - target: "features/user/components/popouts/UserProfileBadges"
+        wrapper: "./app/components/UserProfileBadgesWrapper.tsx"
+
+  admin:
+    pages:
+      - path: "/plugins/custom-badges/manage"
+        handler: "./admin/pages/ManageBadges.ts"
+        nav:
+          label: "Custom Badges"
+          icon: "shield"
+    api:
+      - method: "POST"
+        path: "/plugins/custom-badges/api/save"
+        handler: "./admin/api/save.ts"

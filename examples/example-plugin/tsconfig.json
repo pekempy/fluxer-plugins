@@ -1,0 +1,14 @@
+{
+  "compilerOptions": {
+    "target": "ESNext",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "strict": true,
+    "esModuleInterop": true,
+    "jsx": "react-jsx",
+    "skipLibCheck": true,
+    "declaration": false,
+    "outDir": "./dist"
+  },
+  "include": ["api/**/*", "app/**/*", "admin/**/*"]
+}

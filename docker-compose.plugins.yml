@@ -1,0 +1,94 @@
+services:
+  # Override API to use the plugin loader entrypoint
+  api:
+    command: ["./node_modules/.bin/tsx", "fluxer_plugins/api-loader/entry.ts"]
+    environment:
+      FLUXER_PLUGIN_DIR: /plugins
+      FLUXER_PLUGINS_ENABLED: "true"
+    volumes:
+      - ./plugins:/plugins:ro
+      - ./fluxer_plugins/api-loader:/usr/src/app/fluxer_plugins/api-loader:ro
+      - ./fluxer_plugins/sdk:/usr/src/app/fluxer_plugins/sdk:ro
+
+  # Override worker to use the same plugin loader entrypoint
+  worker:
+    command: ["./node_modules/.bin/tsx", "fluxer_plugins/api-loader/entry.ts"]
+    environment:
+      FLUXER_PLUGIN_DIR: /plugins
+      FLUXER_PLUGINS_ENABLED: "true"
+      FLUXER_API_WORKER_MODE: all_lanes
+      FLUXER_API_WORKER_ENABLE_CRON_SCHEDULER: "true"
+      FLUXER_API_WORKER_ENABLE_VOICE_RECONCILIATION: "true"
+    volumes:
+      - ./plugins:/plugins:ro
+      - ./fluxer_plugins/api-loader:/usr/src/app/fluxer_plugins/api-loader:ro
+      - ./fluxer_plugins/sdk:/usr/src/app/fluxer_plugins/sdk:ro
+
+  # Run the original admin panel on a separate internal address
+  admin-upstream:
+    image: ${FLUXER_REGISTRY:-ghcr.io/${FLUXER_REGISTRY_OWNER:-fluxerapp}}/fluxer-admin:${FLUXER_IMAGE_TAG:-v1}
+    environment:
+      FLUXER_ENV: production
+      NODE_ENV: production
+      FLUXER_SELF_HOSTED: "true"
+      FLUXER_BASE_DOMAIN: ${FLUXER_DOMAIN:?set FLUXER_DOMAIN in .env}
+      FLUXER_PUBLIC_SCHEME: ${FLUXER_PUBLIC_SCHEME:-https}
+      FLUXER_PUBLIC_PORT: ${FLUXER_PUBLIC_PORT:-443}
+      FLUXER_ADMIN_HOST: 0.0.0.0
+      FLUXER_ADMIN_PORT: "8080"
+      FLUXER_ADMIN_BASE_PATH: /admin
+      FLUXER_API_ENDPOINT: http://api:8080
+      FLUXER_ADMIN_ENDPOINT: ${FLUXER_PUBLIC_SCHEME:-https}://${FLUXER_DOMAIN}/admin
+      FLUXER_APP_ENDPOINT: ${FLUXER_PUBLIC_SCHEME:-https}://${FLUXER_DOMAIN}
+      FLUXER_MEDIA_ENDPOINT: ${FLUXER_PUBLIC_SCHEME:-https}://${FLUXER_DOMAIN}/media
+      FLUXER_STATIC_CDN_ENDPOINT: ${FLUXER_PUBLIC_SCHEME:-https}://${FLUXER_DOMAIN}
+      FLUXER_ADMIN_OAUTH_REDIRECT_URI: ${FLUXER_PUBLIC_SCHEME:-https}://${FLUXER_DOMAIN}/admin/oauth2_callback
+      FLUXER_ADMIN_SECRET_KEY_BASE: ${FLUXER_ADMIN_SECRET_KEY_BASE:?set FLUXER_ADMIN_SECRET_KEY_BASE in .env}
+      FLUXER_ADMIN_OAUTH_CLIENT_SECRET: ${FLUXER_ADMIN_OAUTH_CLIENT_SECRET:?set FLUXER_ADMIN_OAUTH_CLIENT_SECRET in .env}
+    depends_on:
+      api: {condition: service_healthy}
+    restart: unless-stopped
+    networks: [fluxer]
+
+  # Redirect the default 'admin' service to our plugin proxy sidecar
+  admin:
+    build:
+      context: ..
+      dockerfile: fluxer_plugins/admin-proxy/Dockerfile
+    environment:
+      UPSTREAM_ADMIN_URL: http://admin-upstream:8080
+      FLUXER_PLUGIN_DIR: /plugins
+      PORT: "8080"
+    volumes:
+      - ./plugins:/plugins:ro
+      - plugin-config:/plugin-config
+    depends_on:
+      - admin-upstream
+    networks: [fluxer]
+
+  # Inject custom SPA builder for plugins and override app-proxy assets
+  app-builder:
+    image: node:24-bookworm-slim
+    working_dir: /workspace
+    command: >
+      bash -c "
+        corepack enable && corepack prepare pnpm@10.29.3 --activate &&
+        pnpm install &&
+        cd fluxer_app &&
+        RSPACK_CONFIG=/workspace/fluxer_plugins/app-loader/rspack.config.mjs pnpm build &&
+        rm -rf /assets/* &&
+        cp -r dist/* /assets/
+      "
+    volumes:
+      - ..:/workspace
+      - app-assets:/assets
+      - ./plugins:/workspace/plugins:ro
+    networks: [fluxer]
+
+  app-proxy:
+    volumes:
+      - app-assets:/srv/app/static
+
+volumes:
+  plugin-config:
+  app-assets:

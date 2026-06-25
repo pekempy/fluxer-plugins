@@ -1,0 +1,17 @@
+{
+  "name": "example-plugin",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch"
+  },
+  "dependencies": {
+    "@pekempy/fluxer-plugin-sdk": "link:../../sdk"
+  },
+  "devDependencies": {
+    "typescript": "^5.8.3",
+    "@types/node": "^24.0.4",
+    "@types/react": "^19.0.0"
+  }
+}

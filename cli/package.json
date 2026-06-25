@@ -1,0 +1,34 @@
+{
+	"name": "@pekempy/fluxer-plugin-cli",
+	"version": "0.1.0",
+	"description": "CLI for managing Fluxer plugins — scaffolding, building, validating, and installing plugins.",
+	"author": "pekempy",
+	"license": "MIT",
+	"type": "module",
+	"bin": {
+		"fluxer-plugin": "./dist/index.js"
+	},
+	"main": "./dist/index.js",
+	"scripts": {
+		"build": "tsc",
+		"dev": "tsc --watch",
+		"clean": "rm -rf dist",
+		"typecheck": "tsc --noEmit"
+	},
+	"dependencies": {
+		"@pekempy/fluxer-plugin-sdk": "link:../sdk",
+		"chalk": "^5.4.1",
+		"commander": "^13.1.0",
+		"prompts": "^2.4.2",
+		"yaml": "^2.7.1",
+		"zod": "^3.25.67"
+	},
+	"devDependencies": {
+		"@types/node": "^24.0.4",
+		"@types/prompts": "^2.4.9",
+		"typescript": "^5.8.3"
+	},
+	"engines": {
+		"node": ">=22"
+	}
+}

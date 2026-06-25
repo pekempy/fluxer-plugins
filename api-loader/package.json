@@ -1,0 +1,28 @@
+{
+	"name": "@pekempy/fluxer-plugin-api-loader",
+	"version": "0.1.0",
+	"description": "Loader that patches fluxer-api with plugins at runtime",
+	"author": "pekempy",
+	"license": "MIT",
+	"type": "module",
+	"main": "./dist/entry.js",
+	"scripts": {
+		"build": "tsc",
+		"dev": "tsc --watch",
+		"clean": "rm -rf dist"
+	},
+	"dependencies": {
+		"@pekempy/fluxer-plugin-sdk": "link:../sdk",
+		"chokidar": "^4.0.3",
+		"yaml": "^2.7.1",
+		"zod": "^3.25.67"
+	},
+	"devDependencies": {
+		"@types/node": "^24.0.4",
+		"hono": "4.12.2",
+		"typescript": "^5.8.3"
+	},
+	"engines": {
+		"node": ">=22"
+	}
+}

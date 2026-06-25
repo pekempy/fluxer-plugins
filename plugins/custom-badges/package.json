@@ -1,0 +1,22 @@
+{
+  "name": "custom-badges",
+  "version": "1.0.0",
+  "description": "A Fluxer plugin",
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@pekempy/fluxer-plugin-sdk": "link:../../sdk"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.4",
+    "@types/react": "^19.0.0",
+    "typescript": "^5.8.3"
+  },
+  "peerDependencies": {
+    "hono": "^4.12.2",
+    "react": "^19.2.4"
+  }
+}

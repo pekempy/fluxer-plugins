@@ -1,0 +1,25 @@
+services:
+  plugin-dev:
+    image: node:24-bookworm-slim
+    working_dir: /workspace
+    volumes:
+      - .:/workspace
+      - ./plugins:/workspace/plugins
+    command: >
+      bash -c "
+        corepack enable && corepack prepare pnpm@10.29.3 --activate &&
+        cd /workspace/cli &&
+        pnpm install --ignore-workspace &&
+        pnpm run build &&
+        node dist/index.js dev --watch
+      "
+    environment:
+      FLUXER_PLUGIN_DIR: /workspace/plugins
+      NODE_ENV: development
+    networks:
+      - default
+
+networks:
+  default:
+    name: fluxer-dev-network
+    external: true

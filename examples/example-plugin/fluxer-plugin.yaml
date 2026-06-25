@@ -1,0 +1,24 @@
+name: "example-plugin"
+version: "1.0.0"
+description: "Reference example plugin for Fluxer monorepo"
+author: "pekempy"
+license: "MIT"
+
+targets:
+  api:
+    routes:
+      - file: "./api/routes/CustomEndpoints.ts"
+        prefix: "/v1/custom"
+
+  app:
+    components:
+      - target: "features/channel/components/UserMessage"
+        wrapper: "./app/components/EnhancedMessageContent.tsx"
+
+  admin:
+    pages:
+      - path: "/plugins/example-plugin/analytics"
+        handler: "./admin/pages/analytics.ts"
+        nav:
+          label: "Example Analytics"
+          icon: "chart-bar"

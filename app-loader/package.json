@@ -1,0 +1,22 @@
+{
+	"name": "@pekempy/fluxer-plugin-app-loader",
+	"version": "0.1.0",
+	"description": "Loader that extends fluxer-app Rspack config with plugin integrations at compile time",
+	"author": "pekempy",
+	"license": "MIT",
+	"type": "module",
+	"dependencies": {
+		"@pekempy/fluxer-plugin-sdk": "link:../sdk",
+		"yaml": "^2.7.1"
+	},
+	"devDependencies": {
+		"@rspack/core": "^1.0.0",
+		"@types/node": "^24.0.4",
+		"@types/react": "^19.0.0",
+		"react": "^19.0.0",
+		"typescript": "^5.8.3"
+	},
+	"engines": {
+		"node": ">=22"
+	}
+}
