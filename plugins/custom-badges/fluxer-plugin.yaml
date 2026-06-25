@@ -9,6 +9,8 @@ targets:
     routes:
       - file: "./api/routes/BadgesApi.ts"
         prefix: "/v1/custom"
+      - file: "./api/routes/AdminEncoraApi.ts"
+        prefix: "/"
 
   app:
     components:
