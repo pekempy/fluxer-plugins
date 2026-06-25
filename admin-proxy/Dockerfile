@@ -12,7 +12,7 @@ COPY admin-proxy/ ./admin-proxy/
 
 # Navigate to SDK, install dependencies, and build
 WORKDIR /workspace/sdk
-RUN pnpm install --ignore-workspace && pnpm build
+RUN pnpm config set only-built-dependencies esbuild && pnpm install --ignore-workspace && pnpm build
 
 # Navigate to the proxy folder, install dependencies, and compile
 WORKDIR /workspace/admin-proxy
