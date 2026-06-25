@@ -38,20 +38,50 @@ export default createRoute({
       const badgesMap = await getBadgesMap();
       const userBadges = [...(badgesMap[userId] || [])];
 
-      // Retrieve existing Encora badge database record if present
+      // Retrieve existing Encora badge database record if present (raw DB query fallback)
       try {
-        const tablesPath = path.resolve(process.cwd(), 'fluxer_api', 'src', 'api', 'Tables.js');
-        const queryExecutionPath = path.resolve(process.cwd(), 'fluxer_api', 'src', 'api', 'database', 'CassandraQueryExecution.js');
-        const { Users } = await import(tablesPath);
-        const { fetchOne } = await import(queryExecutionPath);
+        let customBadgeUrl: string | null = null;
+        let customBadgeLink: string | null = null;
 
-        const bigIntUserId = BigInt(userId) as any;
-        const query = Users.select().where(Users.where.eq('user_id')).limit(1);
-        const userRow = await fetchOne(query, { user_id: bigIntUserId });
+        // Try Postgres KV first
+        try {
+          const clientPath = path.resolve(process.cwd(), 'fluxer_api', 'pkgs', 'postgres', 'src', 'Client.js');
+          const { getDefaultPostgresClient } = await import(clientPath);
+          const client = getDefaultPostgresClient();
+          const result = await client.query(
+            `SELECT row_data FROM "${client.kvTable()}" WHERE table_name = $1 AND row_key = $2 LIMIT 1`,
+            ['users', String(userId)]
+          );
+          const row = result.rows[0];
+          if (row && row.row_data) {
+            const rowData = typeof row.row_data === 'string' ? JSON.parse(row.row_data) : row.row_data;
+            if (rowData) {
+              customBadgeUrl = rowData.custom_badge_url || rowData.customBadgeUrl || null;
+              customBadgeLink = rowData.custom_badge_link || rowData.customBadgeLink || null;
+            }
+          }
+        } catch (pgErr) {
+          // If Postgres fails, try Cassandra
+          try {
+            const cassandraPath = path.resolve(process.cwd(), 'fluxer_api', 'pkgs', 'cassandra', 'src', 'Client.js');
+            const { getClient } = await import(cassandraPath);
+            const client = getClient();
+            const result = await client.execute(
+              'SELECT custom_badge_url, custom_badge_link FROM users WHERE user_id = ? LIMIT 1',
+              [BigInt(userId)],
+              { prepare: true }
+            );
+            const row = result.first();
+            if (row) {
+              customBadgeUrl = row.custom_badge_url || row.customBadgeUrl || null;
+              customBadgeLink = row.custom_badge_link || row.customBadgeLink || null;
+            }
+          } catch (casErr) {
+            // Ignore if both fail
+          }
+        }
 
-        if (userRow && (userRow.custom_badge_url || userRow.customBadgeUrl)) {
-          const customBadgeUrl = userRow.custom_badge_url || userRow.customBadgeUrl;
-          const customBadgeLink = userRow.custom_badge_link || userRow.customBadgeLink;
+        if (customBadgeUrl) {
           const hasEncora = userBadges.some(b => b.iconUrl === customBadgeUrl);
           if (!hasEncora) {
             userBadges.unshift({
@@ -62,7 +92,7 @@ export default createRoute({
           }
         }
       } catch (err) {
-        // Fallback gracefully if database columns do not exist in schema
+        // Fallback gracefully
       }
 
       // Fallback: Check verified encora.it domain connection in standard connections table
