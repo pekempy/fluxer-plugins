@@ -1,6 +1,6 @@
 import { createAdminApi } from '@pekempy/fluxer-plugin-sdk/helpers/admin';
 import { renderDashboardHtml } from '../pages/ManageBadges.js';
-import { getConfigData, saveConfigData, ConfigData, DomainMapping } from '../../api/routes/BadgesApi.js';
+import { getConfigData, saveConfigData, ConfigData, DomainMapping, getUserTags } from '../../api/routes/BadgesApi.js';
 
 export default createAdminApi({
   method: 'POST',
@@ -75,7 +75,10 @@ export default createAdminApi({
       }
     }
 
+    const userIds = Object.keys(config.badges);
+    const userTagsMap = await getUserTags(userIds);
+
     // Return the updated dashboard HTML directly for HTMX to swap in
-    return ctx.html(renderDashboardHtml(config));
+    return ctx.html(renderDashboardHtml(config, userTagsMap));
   }
 });

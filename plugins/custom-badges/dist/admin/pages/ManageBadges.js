@@ -1,6 +1,6 @@
 import { createAdminPage } from '@pekempy/fluxer-plugin-sdk/helpers/admin';
-import { getConfigData } from '../../api/routes/BadgesApi.js';
-export function renderUserBadgesTable(badgesMap) {
+import { getConfigData, getUserTags } from '../../api/routes/BadgesApi.js';
+export function renderUserBadgesTable(badgesMap, userTagsMap) {
     const entries = Object.entries(badgesMap);
     const rows = entries.map(([userId, badges]) => {
         const badgeList = badges.map((b) => `
@@ -12,7 +12,10 @@ export function renderUserBadgesTable(badgesMap) {
     `).join(' ');
         return `
       <tr class="border-t border-gray-100 hover:bg-gray-50">
-        <td class="px-4 py-3 font-mono text-sm text-gray-600">${userId}</td>
+        <td class="px-4 py-3">
+          <div class="font-mono text-sm text-gray-800">${userId}</div>
+          <div class="text-xs text-gray-400 mt-0.5">${userTagsMap[userId] || 'Unknown User'}</div>
+        </td>
         <td class="px-4 py-3">${badgeList}</td>
         <td class="px-4 py-3 text-right">
           <button class="text-red-500 hover:text-red-700 text-sm font-semibold"
@@ -101,7 +104,7 @@ export function renderDomainMappingsTable(mappings) {
     </div>
   `;
 }
-export function renderDashboardHtml(config) {
+export function renderDashboardHtml(config, userTagsMap) {
     return `
     <div class="flex justify-between items-center mb-6">
       <div>
@@ -193,7 +196,7 @@ export function renderDashboardHtml(config) {
         </div>
         <div>
           <h2 class="text-lg font-medium text-gray-800 mb-3">Configured User Badges</h2>
-          ${renderUserBadgesTable(config.badges)}
+          ${renderUserBadgesTable(config.badges, userTagsMap)}
         </div>
       </div>
     </div>
@@ -203,10 +206,12 @@ export default createAdminPage({
     path: '/plugins/custom-badges/manage',
     handler: async (ctx) => {
         const config = await getConfigData();
+        const userIds = Object.keys(config.badges);
+        const userTagsMap = await getUserTags(userIds);
         return `
       <script src="https://cdn.tailwindcss.com"></script>
       <div class="p-6 max-w-7xl mx-auto" id="badges-dashboard">
-        ${renderDashboardHtml(config)}
+        ${renderDashboardHtml(config, userTagsMap)}
       </div>
     `;
     }

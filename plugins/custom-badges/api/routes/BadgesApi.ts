@@ -208,3 +208,69 @@ export default createRoute({
     });
   }
 });
+
+export async function getUserTags(userIds: string[]): Promise<Record<string, string>> {
+  const tagsMap: Record<string, string> = {};
+  if (userIds.length === 0) return tagsMap;
+
+  // Set default placeholder for all
+  for (const id of userIds) {
+    tagsMap[id] = 'Loading...';
+  }
+
+  try {
+    // Try Postgres
+    const clientPath = path.resolve(process.cwd(), 'fluxer_api', 'pkgs', 'postgres', 'src', 'Client.js');
+    const { getDefaultPostgresClient } = await import(clientPath);
+    const client = getDefaultPostgresClient();
+
+    // Query all User IDs
+    const result = await client.query(
+      `SELECT row_key, row_data FROM "${client.kvTable()}" WHERE table_name = $1 AND row_key = ANY($2)`,
+      ['users', userIds]
+    );
+
+    for (const row of result.rows) {
+      const id = row.row_key;
+      const rowData = typeof row.row_data === 'string' ? JSON.parse(row.row_data) : row.row_data;
+      if (rowData) {
+        const username = rowData.username || '';
+        const discriminator = rowData.discriminator || '0000';
+        tagsMap[id] = discriminator && discriminator !== '0000' ? `${username}#${discriminator}` : username;
+      }
+    }
+  } catch (err) {
+    // Fallback to Cassandra if Postgres fails or isn't used
+    try {
+      const cassandraPath = path.resolve(process.cwd(), 'fluxer_api', 'pkgs', 'cassandra', 'src', 'Client.js');
+      const { getClient } = await import(cassandraPath);
+      const client = getClient();
+      
+      const bigIntIds = userIds.map(id => BigInt(id));
+      const result = await client.execute(
+        'SELECT user_id, username, discriminator FROM users WHERE user_id IN ?',
+        [bigIntIds],
+        { prepare: true }
+      );
+      
+      for (const row of result.rows) {
+        const id = String(row.user_id || row.userId);
+        const username = row.username || '';
+        const discriminator = row.discriminator || '0000';
+        tagsMap[id] = discriminator && discriminator !== '0000' ? `${username}#${discriminator}` : username;
+      }
+    } catch (casErr) {
+      console.error('[Custom Badges] Failed to query user tags:', casErr);
+    }
+  }
+
+  // Fallback for IDs that were not found in DB
+  for (const id of userIds) {
+    if (tagsMap[id] === 'Loading...') {
+      tagsMap[id] = 'Unknown User';
+    }
+  }
+
+  return tagsMap;
+}
+
