@@ -66,6 +66,7 @@ async function main() {
   serve({
     fetch: app.fetch,
     port,
+    hostname: '0.0.0.0',
   });
   console.log(`[Admin Proxy] Listening on port ${port}`);
 
