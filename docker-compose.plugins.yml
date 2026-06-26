@@ -75,7 +75,9 @@ services:
         corepack enable && corepack prepare pnpm@10.29.3 --activate &&
         pnpm install &&
         cd fluxer_app &&
-        RSPACK_CONFIG=/workspace/fluxer_plugins/app-loader/rspack.config.mjs pnpm build &&
+        pnpm wasm:codegen && pnpm generate:colors && pnpm generate:message-layout && pnpm generate:theme-variables && pnpm generate:masks && pnpm generate:css-types && pnpm lingui:compile && rm -rf dist &&
+        npx rspack build --mode production --config /workspace/fluxer_plugins/app-loader/rspack.config.mjs &&
+        pnpm tsx scripts/build-sw.mjs &&
         rm -rf /assets/* &&
         cp -r dist/* /assets/
       "
