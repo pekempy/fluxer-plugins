@@ -18,7 +18,7 @@ export function renderUserBadgesTable(badgesMap: Record<string, Badge[]>): strin
         <td class="px-4 py-3">${badgeList}</td>
         <td class="px-4 py-3 text-right">
           <button class="text-red-500 hover:text-red-700 text-sm font-semibold"
-                  hx-post="/plugins/custom-badges/api/save"
+                  hx-post="/admin/plugins/custom-badges/api/save"
                   hx-vals='{"userId": "${userId}", "action": "delete"}'
                   hx-target="#badges-dashboard"
                   hx-swap="innerHTML">
@@ -71,7 +71,7 @@ export function renderDomainMappingsTable(mappings: DomainMapping[]): string {
         </td>
         <td class="px-4 py-3 text-right">
           <button class="text-red-500 hover:text-red-700 text-sm font-semibold"
-                  hx-post="/plugins/custom-badges/api/save"
+                  hx-post="/admin/plugins/custom-badges/api/save"
                   hx-vals='{"domain": "${m.domain}", "action": "delete-mapping"}'
                   hx-target="#badges-dashboard"
                   hx-swap="innerHTML">
@@ -124,7 +124,7 @@ export function renderDashboardHtml(config: ConfigData): string {
         <!-- Form 1: Add Badge by User ID -->
         <div class="bg-white p-6 rounded border border-gray-200 shadow-sm">
           <h2 class="text-lg font-medium text-gray-800 mb-4">Add User Badge</h2>
-          <form hx-post="/plugins/custom-badges/api/save"
+          <form hx-post="/admin/plugins/custom-badges/api/save"
                 hx-target="#badges-dashboard"
                 hx-swap="innerHTML"
                 class="space-y-4">
@@ -159,7 +159,7 @@ export function renderDashboardHtml(config: ConfigData): string {
         <!-- Form 2: Add Domain Mapping -->
         <div class="bg-white p-6 rounded border border-gray-200 shadow-sm">
           <h2 class="text-lg font-medium text-gray-800 mb-4">Add Domain Mapping</h2>
-          <form hx-post="/plugins/custom-badges/api/save"
+          <form hx-post="/admin/plugins/custom-badges/api/save"
                 hx-target="#badges-dashboard"
                 hx-swap="innerHTML"
                 class="space-y-4">
