@@ -42,8 +42,12 @@ export async function renderPluginPage(
       if (upstreamRes.ok) {
         const layoutHtml = await upstreamRes.text();
         root = parse(layoutHtml);
-      } else if (upstreamRes.status === 401 || upstreamRes.status === 403) {
-        return c.redirect(`/admin/login`);
+      } else {
+        const errText = await upstreamRes.text().catch(() => '');
+        console.warn(`[Admin Proxy] Failed to fetch layout from upstream. Status: ${upstreamRes.status}, Body: ${errText.slice(0, 300)}`);
+        if (upstreamRes.status === 401 || upstreamRes.status === 403) {
+          return c.redirect(`/admin/login`);
+        }
       }
     } catch (fetchErr) {
       console.warn(`[Admin Proxy] Upstream admin offline, using fallback layout:`, fetchErr);
