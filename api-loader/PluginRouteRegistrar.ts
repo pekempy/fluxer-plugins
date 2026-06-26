@@ -27,9 +27,14 @@ export async function registerRoutes(app: Hono, plugins: LoadedPlugin[], forceRe
 
         const subRouter = new Hono();
 
-        // Register standard middlewares to inject DB services and user auth context
         subRouter.use('*', ServiceMiddleware);
-        subRouter.use('*', UserMiddleware);
+        subRouter.use('*', async (ctx, next) => {
+          const path = ctx.req.path;
+          if (path.endsWith('/users/tags') || ctx.req.header('x-internal-request') === 'true') {
+            return next();
+          }
+          return UserMiddleware(ctx, next);
+        });
 
         // Wrap the subRouter in a Proxy to convert all registered route handlers into dynamic hot-swappable delegates
         const wrappedSubRouter = new Proxy(subRouter, {

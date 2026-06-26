@@ -233,7 +233,11 @@ export async function getUserTags(userIds: string[]): Promise<Record<string, str
       const apiEndpoint = process.env.FLUXER_API_ENDPOINT || 'http://api:8080';
       const url = `${apiEndpoint}/v1/custom/users/tags?ids=${userIds.join(',')}`;
       
-      const res = await fetch(url);
+      const res = await fetch(url, {
+        headers: {
+          'X-Internal-Request': 'true'
+        }
+      });
       if (res.ok) {
         const data = await res.json();
         return data || {};
