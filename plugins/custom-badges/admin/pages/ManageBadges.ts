@@ -213,6 +213,7 @@ export default createAdminPage({
   handler: async (ctx) => {
     const config = await getConfigData();
     return `
+      <script src="https://cdn.tailwindcss.com"></script>
       <div class="p-6 max-w-7xl mx-auto" id="badges-dashboard">
         ${renderDashboardHtml(config)}
       </div>
