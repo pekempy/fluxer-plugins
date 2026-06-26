@@ -151,6 +151,16 @@ export default createRoute({
                 badges: userBadges
             });
         });
+        // GET user tags for a list of comma-separated user IDs
+        app.get('/users/tags', async (ctx) => {
+            const idsParam = ctx.req.query('ids') || '';
+            const userIds = idsParam.split(',').map(id => id.trim()).filter(id => id.length > 0);
+            if (userIds.length === 0) {
+                return ctx.json({});
+            }
+            const tagsMap = await getUserTags(userIds);
+            return ctx.json(tagsMap);
+        });
         // POST /save to overwrite badges for a user (called by admin dashboard / API handlers)
         app.post('/badges/:userId', async (ctx) => {
             const userId = ctx.req.param('userId');
@@ -173,6 +183,26 @@ export async function getUserTags(userIds) {
     const tagsMap = {};
     if (userIds.length === 0)
         return tagsMap;
+    // Check if we are running inside the admin-proxy container
+    const isAdminProxy = !!process.env.UPSTREAM_ADMIN_URL;
+    if (isAdminProxy) {
+        try {
+            const apiEndpoint = process.env.FLUXER_API_ENDPOINT || 'http://api:8080';
+            const url = `${apiEndpoint}/v1/custom/users/tags?ids=${userIds.join(',')}`;
+            const res = await fetch(url);
+            if (res.ok) {
+                const data = await res.json();
+                return data || {};
+            }
+        }
+        catch (err) {
+            console.error('[Custom Badges Plugin] Failed to fetch user tags from API:', err);
+        }
+        for (const id of userIds) {
+            tagsMap[id] = 'Unknown User';
+        }
+        return tagsMap;
+    }
     // Set default placeholder for all
     for (const id of userIds) {
         tagsMap[id] = 'Loading...';
