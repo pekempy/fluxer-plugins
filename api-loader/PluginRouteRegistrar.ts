@@ -3,6 +3,10 @@ import path from 'path';
 import type { LoadedPlugin } from '@pekempy/fluxer-plugin-sdk/types/plugin';
 import { getResolvableFileUrl, registerPluginHandler, getPluginHandler } from './HotReloader.js';
 
+// Import standard middlewares from the main api server
+import { ServiceMiddleware } from '../../fluxer_api/src/api/middleware/ServiceMiddleware.js';
+import { UserMiddleware } from '../../fluxer_api/src/api/middleware/UserMiddleware.js';
+
 export async function registerRoutes(app: Hono, plugins: LoadedPlugin[], forceReload = false) {
   for (const plugin of plugins) {
     const routes = plugin.manifest.targets?.api?.routes || [];
@@ -22,6 +26,10 @@ export async function registerRoutes(app: Hono, plugins: LoadedPlugin[], forceRe
         }
 
         const subRouter = new Hono();
+
+        // Register standard middlewares to inject DB services and user auth context
+        subRouter.use('*', ServiceMiddleware);
+        subRouter.use('*', UserMiddleware);
 
         // Wrap the subRouter in a Proxy to convert all registered route handlers into dynamic hot-swappable delegates
         const wrappedSubRouter = new Proxy(subRouter, {

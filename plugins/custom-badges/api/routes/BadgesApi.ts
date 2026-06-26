@@ -2,7 +2,9 @@ import { createRoute } from '@pekempy/fluxer-plugin-sdk/helpers/api';
 import { promises as fs } from 'fs';
 import path from 'path';
 
-const configPath = path.resolve(process.cwd(), 'plugins', 'config', 'custom-badges.json');
+const configPath = process.env.FLUXER_PLUGIN_CONFIG_DIR
+  ? path.join(process.env.FLUXER_PLUGIN_CONFIG_DIR, 'custom-badges.json')
+  : path.resolve(process.cwd(), 'plugins', 'config', 'custom-badges.json');
 
 export interface Badge {
   iconUrl: string;
@@ -10,23 +12,62 @@ export interface Badge {
   url?: string;
 }
 
-export async function getBadgesMap(): Promise<Record<string, Badge[]>> {
+export interface DomainMapping {
+  domain: string;
+  iconUrl: string;
+  tooltip: string;
+  urlTemplate?: string;
+}
+
+export interface ConfigData {
+  badges: Record<string, Badge[]>;
+  domainMappings: DomainMapping[];
+}
+
+const DEFAULT_DOMAIN_MAPPINGS: DomainMapping[] = [
+  {
+    domain: 'encora.it',
+    iconUrl: 'https://encora.it/images/favicon.png',
+    tooltip: 'Linked Encora Profile',
+    urlTemplate: 'https://encora.it/traders/{slug}'
+  }
+];
+
+export async function getConfigData(): Promise<ConfigData> {
   try {
     const data = await fs.readFile(configPath, 'utf-8');
     const parsed = JSON.parse(data);
-    return parsed.badges || {};
+    return {
+      badges: parsed.badges || {},
+      domainMappings: parsed.domainMappings || DEFAULT_DOMAIN_MAPPINGS,
+    };
   } catch {
-    return {};
+    return {
+      badges: {},
+      domainMappings: DEFAULT_DOMAIN_MAPPINGS,
+    };
   }
 }
 
-export async function saveBadgesMap(map: Record<string, Badge[]>): Promise<void> {
+export async function saveConfigData(config: ConfigData): Promise<void> {
   try {
     await fs.mkdir(path.dirname(configPath), { recursive: true });
-    await fs.writeFile(configPath, JSON.stringify({ badges: map }, null, 2), 'utf-8');
+    await fs.writeFile(configPath, JSON.stringify(config, null, 2), 'utf-8');
   } catch (err) {
-    console.error('[Custom Badges Plugin] Failed to save badges:', err);
+    console.error('[Custom Badges Plugin] Failed to save config:', err);
   }
+}
+
+// Keep the old maps exports for compatibility if needed elsewhere
+export async function getBadgesMap(): Promise<Record<string, Badge[]>> {
+  const config = await getConfigData();
+  return config.badges;
+}
+
+export async function saveBadgesMap(map: Record<string, Badge[]>): Promise<void> {
+  const config = await getConfigData();
+  config.badges = map;
+  await saveConfigData(config);
 }
 
 export default createRoute({
@@ -35,8 +76,8 @@ export default createRoute({
     // GET custom badges for a specific user
     app.get('/badges/:userId', async (ctx) => {
       const userId = ctx.req.param('userId');
-      const badgesMap = await getBadgesMap();
-      const userBadges = [...(badgesMap[userId] || [])];
+      const config = await getConfigData();
+      const userBadges = [...(config.badges[userId] || [])];
 
       // Retrieve existing Encora badge database record if present (raw DB query fallback)
       try {
@@ -95,34 +136,43 @@ export default createRoute({
         // Fallback gracefully
       }
 
-      // Fallback: Check verified encora.it domain connection in standard connections table
+      // Fallback: Check verified domain connections in standard connections table
       try {
         const connectionService = ctx.get('connectionService') as any;
         if (connectionService) {
           const bigIntUserId = BigInt(userId) as any;
           const connections = await connectionService.getConnectionsForUser(bigIntUserId);
           if (Array.isArray(connections)) {
-            const encoraConn = connections.find((c: any) => 
-              c.connection_type === 'domain' && 
-              c.verified && 
-              (c.name.includes('encora.it/traders/') || c.name.startsWith('encora.it/'))
-            );
-            if (encoraConn) {
-              let slug = '';
-              if (encoraConn.name.includes('encora.it/traders/')) {
-                slug = encoraConn.name.split('encora.it/traders/')[1] || '';
-              } else if (encoraConn.name.includes('encora.it/')) {
-                slug = encoraConn.name.split('encora.it/')[1] || '';
-              }
-              
-              const badgeUrl = 'https://encora.it/images/favicon.png';
-              const hasEncora = userBadges.some(b => b.iconUrl === badgeUrl);
-              if (!hasEncora) {
-                userBadges.unshift({
-                  iconUrl: badgeUrl,
-                  tooltip: 'Linked Encora Profile',
-                  url: `https://encora.it/traders/${slug}`
-                });
+            for (const conn of connections) {
+              if (conn.connection_type === 'domain' && conn.verified) {
+                // Find matching domain mapping
+                const mapping = config.domainMappings.find(m => 
+                  conn.name.toLowerCase().includes(m.domain.toLowerCase()) || 
+                  conn.name.toLowerCase().startsWith(m.domain.toLowerCase())
+                );
+                if (mapping) {
+                  // Extract slug (e.g. part after domain/)
+                  let slug = '';
+                  const domainIdx = conn.name.toLowerCase().indexOf(mapping.domain.toLowerCase());
+                  if (domainIdx !== -1) {
+                    const domainPart = conn.name.substring(domainIdx + mapping.domain.length);
+                    // Strip leading slash or other format (e.g. traders/)
+                    slug = domainPart.replace(/^\/(traders\/)?/, '');
+                  }
+                  
+                  const url = mapping.urlTemplate 
+                    ? mapping.urlTemplate.replace('{slug}', slug)
+                    : undefined;
+                  
+                  const hasBadge = userBadges.some(b => b.iconUrl === mapping.iconUrl);
+                  if (!hasBadge) {
+                    userBadges.push({
+                      iconUrl: mapping.iconUrl,
+                      tooltip: mapping.tooltip,
+                      url
+                    });
+                  }
+                }
               }
             }
           }
@@ -146,14 +196,14 @@ export default createRoute({
         return ctx.json({ ok: false, error: 'Invalid badges array' }, 400);
       }
 
-      const badgesMap = await getBadgesMap();
-      badgesMap[userId] = body.badges;
-      await saveBadgesMap(badgesMap);
+      const config = await getConfigData();
+      config.badges[userId] = body.badges;
+      await saveConfigData(config);
 
       return ctx.json({
         ok: true,
         userId,
-        badges: badgesMap[userId]
+        badges: config.badges[userId]
       });
     });
   }
