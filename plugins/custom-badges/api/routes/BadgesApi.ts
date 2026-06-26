@@ -264,13 +264,14 @@ export async function getUserTags(userIds: string[]): Promise<Record<string, str
     const client = getDefaultPostgresClient();
 
     // Query all User IDs
+    // row_key is stored as JSON-serialized BigInt: {"__fluxer_type":"bigint","value":"<id>"}
     const result = await client.query(
-      `SELECT row_key, row_data FROM "${client.kvTable()}" WHERE table_name = $1 AND row_key = ANY($2)`,
+      `SELECT row_key::jsonb ->> 'value' AS user_id, row_data FROM "${client.kvTable()}" WHERE table_name = $1 AND row_key::jsonb ->> 'value' = ANY($2)`,
       ['users', userIds]
     );
 
     for (const row of result.rows) {
-      const id = row.row_key;
+      const id = row.user_id;
       const rowData = typeof row.row_data === 'string' ? JSON.parse(row.row_data) : row.row_data;
       if (rowData) {
         const username = rowData.username || '';
