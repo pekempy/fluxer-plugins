@@ -1,7 +1,8 @@
 import { createRequire } from 'node:module';
 import path from 'node:path';
 import { promises as fs } from 'node:fs';
-import rspack from '@rspack/core';
+const require = createRequire(import.meta.url);
+const rspack = require(require.resolve('@rspack/core', { paths: [process.cwd()] }));
 
 import { discoverPlugins } from './PluginDiscovery.mjs';
 import { generateWrapperModules } from './WrapperModuleGenerator.mjs';

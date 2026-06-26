@@ -1,6 +1,8 @@
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
-import yaml from 'yaml';
+import { createRequire } from 'node:module';
+const require = createRequire(import.meta.url);
+const yaml = require(require.resolve('yaml', { paths: [process.cwd()] }));
 
 export async function discoverPlugins(pluginsDir) {
   const resolvedDir = path.resolve(pluginsDir);
