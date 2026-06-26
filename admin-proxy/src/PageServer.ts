@@ -19,12 +19,13 @@ export async function renderPluginPage(
     const module = await import(fileUrl);
     const config = module.default || module;
 
-    if (!config || typeof config.render !== 'function') {
-      return c.text(`Plugin handler in '${pageOrSetting.handler}' does not export a render() function.`, 500);
+    const renderFn = config.handler || config.render;
+    if (!config || typeof renderFn !== 'function') {
+      return c.text(`Plugin handler in '${pageOrSetting.handler}' does not export a handler() or render() function.`, 500);
     }
 
     // 2. Render page content
-    const pageContentHtml = await config.render(c);
+    const pageContentHtml = await renderFn(c);
     const title = config.title || 'Plugin Page';
 
     // 3. Fetch layout from upstream admin

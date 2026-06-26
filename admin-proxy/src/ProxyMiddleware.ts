@@ -7,10 +7,11 @@ export async function createProxyMiddleware(upstreamUrl: string) {
     const url = new URL(ctx.req.url);
     const targetUrl = `${upstreamUrl}${url.pathname}${url.search}`;
 
-    // Clone headers, skipping Host header to let fetch set the correct one
+    // Clone headers, skipping Host header and Accept-Encoding to let fetch handle/request uncompressed data
     const headers = new Headers();
     ctx.req.raw.headers.forEach((val, key) => {
-      if (key.toLowerCase() !== 'host') {
+      const lowerKey = key.toLowerCase();
+      if (lowerKey !== 'host' && lowerKey !== 'accept-encoding') {
         headers.set(key, val);
       }
     });
@@ -28,7 +29,8 @@ export async function createProxyMiddleware(upstreamUrl: string) {
 
       const responseHeaders = new Headers();
       response.headers.forEach((val, key) => {
-        if (key.toLowerCase() === 'location') {
+        const lowerKey = key.toLowerCase();
+        if (lowerKey === 'location') {
           // Rewrite Location header to point to proxy instead of upstream
           try {
             const locUrl = new URL(val, url.origin);
@@ -41,7 +43,7 @@ export async function createProxyMiddleware(upstreamUrl: string) {
           } catch {
             responseHeaders.set(key, val);
           }
-        } else {
+        } else if (lowerKey !== 'content-encoding' && lowerKey !== 'content-length') {
           responseHeaders.set(key, val);
         }
       });
