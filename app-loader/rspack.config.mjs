@@ -138,12 +138,20 @@ export default async () => {
     ...replacements,
   ];
 
-  // 8. Add alias for generated directory
+  // 8. Add alias for generated directory and SDK
   config.resolve = config.resolve || {};
   config.resolve.alias = {
     ...config.resolve.alias,
     '@plugins-generated': outputDir,
+    '@pekempy/fluxer-plugin-sdk': path.resolve(import.meta.dirname, '../sdk/src'),
   };
+
+  // 9. Add fallback modules directories for resolving packages like 'react' outside the app folder
+  config.resolve.modules = [
+    ...(config.resolve.modules || ['node_modules']),
+    path.join(appDir, 'node_modules'),
+    path.join(appDir, '../node_modules'),
+  ];
 
   return config;
 };
