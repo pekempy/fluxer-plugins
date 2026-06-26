@@ -16,19 +16,31 @@ export default createAdminApi({
             }
         }
         else if (action === 'save-badge') {
-            const userId = body.userId;
+            const userIdsRaw = (body.userIds || body.userId || '');
             const iconUrl = body.iconUrl;
             const tooltip = body.tooltip;
             const url = body.url || undefined;
-            if (!userId) {
-                return ctx.text('Missing User ID', 400);
+            if (!userIdsRaw) {
+                return ctx.text('Missing User ID(s)', 400);
             }
             if (!iconUrl || !tooltip) {
                 return ctx.text('Missing Icon URL or Tooltip', 400);
             }
-            const existing = config.badges[userId] || [];
-            existing.push({ iconUrl, tooltip, url });
-            config.badges[userId] = existing;
+            const userIds = userIdsRaw
+                .split(/[\s,]+/)
+                .map(id => id.trim())
+                .filter(id => id.length > 0);
+            if (userIds.length === 0) {
+                return ctx.text('No valid User ID(s) provided', 400);
+            }
+            for (const userId of userIds) {
+                const existing = config.badges[userId] || [];
+                const isDuplicate = existing.some(b => b.iconUrl === iconUrl && b.tooltip === tooltip);
+                if (!isDuplicate) {
+                    existing.push({ iconUrl, tooltip, url });
+                    config.badges[userId] = existing;
+                }
+            }
             await saveConfigData(config);
         }
         else if (action === 'save-mapping') {

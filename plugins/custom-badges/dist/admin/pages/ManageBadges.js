@@ -122,8 +122,8 @@ export function renderDashboardHtml(config) {
                 class="space-y-4">
             <input type="hidden" name="action" value="save-badge" />
             <div>
-              <label class="block text-xs font-semibold text-gray-500 uppercase">User Snowflake ID</label>
-              <input type="text" name="userId" required placeholder="e.g. 1518021155376594944"
+              <label class="block text-xs font-semibold text-gray-500 uppercase">User Snowflake ID(s) (comma-separated)</label>
+              <input type="text" name="userIds" required placeholder="e.g. 1518020854590472192, 1518021155376594944"
                      class="mt-1 block w-full rounded border-gray-300 shadow-sm text-sm focus:border-indigo-500 focus:ring-indigo-500">
             </div>
             <div>

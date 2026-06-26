@@ -17,21 +17,35 @@ export default createAdminApi({
         await saveConfigData(config);
       }
     } else if (action === 'save-badge') {
-      const userId = body.userId as string;
+      const userIdsRaw = (body.userIds as string || body.userId as string || '');
       const iconUrl = body.iconUrl as string;
       const tooltip = body.tooltip as string;
       const url = (body.url as string) || undefined;
 
-      if (!userId) {
-        return ctx.text('Missing User ID', 400);
+      if (!userIdsRaw) {
+        return ctx.text('Missing User ID(s)', 400);
       }
       if (!iconUrl || !tooltip) {
         return ctx.text('Missing Icon URL or Tooltip', 400);
       }
 
-      const existing = config.badges[userId] || [];
-      existing.push({ iconUrl, tooltip, url });
-      config.badges[userId] = existing;
+      const userIds = userIdsRaw
+        .split(/[\s,]+/)
+        .map(id => id.trim())
+        .filter(id => id.length > 0);
+
+      if (userIds.length === 0) {
+        return ctx.text('No valid User ID(s) provided', 400);
+      }
+
+      for (const userId of userIds) {
+        const existing = config.badges[userId] || [];
+        const isDuplicate = existing.some(b => b.iconUrl === iconUrl && b.tooltip === tooltip);
+        if (!isDuplicate) {
+          existing.push({ iconUrl, tooltip, url });
+          config.badges[userId] = existing;
+        }
+      }
       await saveConfigData(config);
     } else if (action === 'save-mapping') {
       const domain = (body.domain as string)?.toLowerCase()?.trim();
