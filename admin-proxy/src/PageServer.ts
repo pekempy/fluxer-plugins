@@ -37,7 +37,7 @@ export async function renderPluginPage(
 
     let root: any = null;
     try {
-      const upstreamRes = await fetch(`${upstreamUrl}/admin/users`, { headers });
+      const upstreamRes = await fetch(`${upstreamUrl}/users`, { headers });
       
       if (upstreamRes.ok) {
         const layoutHtml = await upstreamRes.text();
