@@ -61,7 +61,7 @@ export default createRoute({
                 let customBadgeLink = null;
                 // Try Postgres KV first
                 try {
-                    const clientPath = path.resolve(process.cwd(), 'fluxer_api', 'pkgs', 'postgres', 'src', 'Client.js');
+                    const clientPath = path.resolve(process.cwd(), 'node_modules', '@pkgs', 'postgres', 'src', 'Client.ts');
                     const { getDefaultPostgresClient } = await import(clientPath);
                     const client = getDefaultPostgresClient();
                     const result = await client.query(`SELECT row_data FROM "${client.kvTable()}" WHERE table_name = $1 AND row_key = $2 LIMIT 1`, ['users', String(userId)]);
@@ -77,7 +77,7 @@ export default createRoute({
                 catch (pgErr) {
                     // If Postgres fails, try Cassandra
                     try {
-                        const cassandraPath = path.resolve(process.cwd(), 'fluxer_api', 'pkgs', 'cassandra', 'src', 'Client.js');
+                        const cassandraPath = path.resolve(process.cwd(), 'node_modules', '@pkgs', 'cassandra', 'src', 'Client.ts');
                         const { getClient } = await import(cassandraPath);
                         const client = getClient();
                         const result = await client.execute('SELECT custom_badge_url, custom_badge_link FROM users WHERE user_id = ? LIMIT 1', [BigInt(userId)], { prepare: true });
@@ -213,7 +213,7 @@ export async function getUserTags(userIds) {
     }
     try {
         // Try Postgres
-        const clientPath = path.resolve(process.cwd(), 'fluxer_api', 'pkgs', 'postgres', 'src', 'Client.js');
+        const clientPath = path.resolve(process.cwd(), 'node_modules', '@pkgs', 'postgres', 'src', 'Client.ts');
         const { getDefaultPostgresClient } = await import(clientPath);
         const client = getDefaultPostgresClient();
         // Query all User IDs
@@ -229,9 +229,10 @@ export async function getUserTags(userIds) {
         }
     }
     catch (err) {
+        console.error('[Custom Badges] Postgres query failed for user tags:', err);
         // Fallback to Cassandra if Postgres fails or isn't used
         try {
-            const cassandraPath = path.resolve(process.cwd(), 'fluxer_api', 'pkgs', 'cassandra', 'src', 'Client.js');
+            const cassandraPath = path.resolve(process.cwd(), 'node_modules', '@pkgs', 'cassandra', 'src', 'Client.ts');
             const { getClient } = await import(cassandraPath);
             const client = getClient();
             const bigIntIds = userIds.map(id => BigInt(id));

@@ -86,7 +86,7 @@ export default createRoute({
 
         // Try Postgres KV first
         try {
-          const clientPath = path.resolve(process.cwd(), 'fluxer_api', 'pkgs', 'postgres', 'src', 'Client.js');
+          const clientPath = path.resolve(process.cwd(), 'node_modules', '@pkgs', 'postgres', 'src', 'Client.ts');
           const { getDefaultPostgresClient } = await import(clientPath);
           const client = getDefaultPostgresClient();
           const result = await client.query(
@@ -104,7 +104,7 @@ export default createRoute({
         } catch (pgErr) {
           // If Postgres fails, try Cassandra
           try {
-            const cassandraPath = path.resolve(process.cwd(), 'fluxer_api', 'pkgs', 'cassandra', 'src', 'Client.js');
+            const cassandraPath = path.resolve(process.cwd(), 'node_modules', '@pkgs', 'cassandra', 'src', 'Client.ts');
             const { getClient } = await import(cassandraPath);
             const client = getClient();
             const result = await client.execute(
@@ -259,7 +259,7 @@ export async function getUserTags(userIds: string[]): Promise<Record<string, str
 
   try {
     // Try Postgres
-    const clientPath = path.resolve(process.cwd(), 'fluxer_api', 'pkgs', 'postgres', 'src', 'Client.js');
+    const clientPath = path.resolve(process.cwd(), 'node_modules', '@pkgs', 'postgres', 'src', 'Client.ts');
     const { getDefaultPostgresClient } = await import(clientPath);
     const client = getDefaultPostgresClient();
 
@@ -279,9 +279,10 @@ export async function getUserTags(userIds: string[]): Promise<Record<string, str
       }
     }
   } catch (err) {
+    console.error('[Custom Badges] Postgres query failed for user tags:', err);
     // Fallback to Cassandra if Postgres fails or isn't used
     try {
-      const cassandraPath = path.resolve(process.cwd(), 'fluxer_api', 'pkgs', 'cassandra', 'src', 'Client.js');
+      const cassandraPath = path.resolve(process.cwd(), 'node_modules', '@pkgs', 'cassandra', 'src', 'Client.ts');
       const { getClient } = await import(cassandraPath);
       const client = getClient();
       
