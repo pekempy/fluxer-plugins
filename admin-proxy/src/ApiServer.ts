@@ -35,7 +35,11 @@ export async function registerPluginApis(app: any, plugins: LoadedPlugin[]) {
           if (!activeHandler) {
             return c.text('Plugin API handler not loaded', 500);
           }
-          return activeHandler(c);
+          const fn = typeof activeHandler === 'function' ? activeHandler : activeHandler.handler;
+          if (typeof fn !== 'function') {
+            return c.text('Plugin API handler function not found', 500);
+          }
+          return fn(c);
         };
 
         const method = api.method.toUpperCase();
