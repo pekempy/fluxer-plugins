@@ -39,5 +39,29 @@ export async function injectPluginsIntoHtml(html: string, ctx: Context): Promise
   // Specialized sidebar injection for plugin admin menus
   injectSidebar(root, plugins);
 
+  // Dynamic cache-busting for stylesheet and script links
+  const timestamp = Date.now();
+  const links = root.querySelectorAll('link[rel="stylesheet"]');
+  for (const link of links) {
+    const href = link.getAttribute('href');
+    if (href) {
+      const newHref = href.includes('t=')
+        ? href.replace(/([?&])t=[^&]*/, `$1t=${timestamp}`)
+        : href + (href.includes('?') ? '&' : '?') + `t=${timestamp}`;
+      link.setAttribute('href', newHref);
+    }
+  }
+
+  const scripts = root.querySelectorAll('script[src]');
+  for (const script of scripts) {
+    const src = script.getAttribute('src');
+    if (src) {
+      const newSrc = src.includes('t=')
+        ? src.replace(/([?&])t=[^&]*/, `$1t=${timestamp}`)
+        : src + (src.includes('?') ? '&' : '?') + `t=${timestamp}`;
+      script.setAttribute('src', newSrc);
+    }
+  }
+
   return root.toString();
 }
