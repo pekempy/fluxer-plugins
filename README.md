@@ -1,5 +1,8 @@
 # Fluxer Plugin System
 
+> [!WARNING]
+> This codebase contains AI-generated code. It has not been fully audited or reviewed and should **NOT** be relied upon for anything relating to security. Perform a complete manual code and security review before deploying or relying on this system in production environments.
+
 The Fluxer Plugin System allows you to extend and modify the behavior of the `fluxer-api` (backend), `fluxer-app` (React/MobX frontend SPA), and `fluxer-admin` (admin panel dashboard) **without modifying the upstream source code**, ensuring 100% clean merges.
 
 This workspace contains:
