@@ -3,11 +3,19 @@ import { getConfigData, getUserTags } from '../../api/routes/BadgesApi.js';
 export function renderUserBadgesTable(badgesMap, userTagsMap) {
     const entries = Object.entries(badgesMap);
     const rows = entries.map(([userId, badges]) => {
-        const badgeList = badges.map((b) => `
+        const badgeList = badges.map((b, bIdx) => `
       <div class="inline-flex items-center gap-1 bg-gray-100 px-2 py-1 rounded text-xs border border-gray-200">
         <img src="${b.iconUrl}" class="w-4 h-4 object-contain" />
         <span class="font-medium">${b.tooltip}</span>
         ${b.url ? `<a href="${b.url}" target="_blank" class="text-blue-500 hover:underline">🔗</a>` : ''}
+        <button class="text-red-400 hover:text-red-600 font-bold ml-1 hover:scale-110 transition-transform"
+                title="Remove badge"
+                hx-post="/admin/plugins/custom-badges/api/save"
+                hx-vals='{"userId": "${userId}", "badgeIndex": ${bIdx}, "action": "delete-individual"}'
+                hx-target="#badges-dashboard"
+                hx-swap="innerHTML">
+          ×
+        </button>
       </div>
     `).join(' ');
         return `

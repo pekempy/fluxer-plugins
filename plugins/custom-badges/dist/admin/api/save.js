@@ -15,6 +15,24 @@ export default createAdminApi({
                 await saveConfigData(config);
             }
         }
+        else if (action === 'delete-individual') {
+            const userId = body.userId;
+            const badgeIndexRaw = body.badgeIndex;
+            if (userId && badgeIndexRaw !== undefined) {
+                const badgeIndex = parseInt(badgeIndexRaw, 10);
+                const existing = config.badges[userId];
+                if (existing && Array.isArray(existing)) {
+                    existing.splice(badgeIndex, 1);
+                    if (existing.length === 0) {
+                        delete config.badges[userId];
+                    }
+                    else {
+                        config.badges[userId] = existing;
+                    }
+                    await saveConfigData(config);
+                }
+            }
+        }
         else if (action === 'save-badge') {
             const userIdsRaw = (body.userIds || body.userId || '');
             const iconUrl = body.iconUrl;
