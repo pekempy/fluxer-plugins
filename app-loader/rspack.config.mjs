@@ -138,10 +138,15 @@ export default async () => {
     ...replacements,
   ];
 
+  const mainReactDir = path.dirname(require.resolve('react/package.json', { paths: [appDir] }));
+  const mainReactDomDir = path.dirname(require.resolve('react-dom/package.json', { paths: [appDir] }));
+
   // 8. Add alias for generated directory and SDK
   config.resolve = config.resolve || {};
   config.resolve.alias = {
     ...config.resolve.alias,
+    'react': mainReactDir,
+    'react-dom': mainReactDomDir,
     '@plugins-generated': outputDir,
     '@pekempy/fluxer-plugin-sdk': path.resolve(import.meta.dirname, '../sdk/src'),
   };
