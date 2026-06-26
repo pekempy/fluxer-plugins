@@ -1,5 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { wrapComponent } from '@pekempy/fluxer-plugin-sdk/helpers/app';
+import styles from '@app/features/user/components/popouts/UserProfileBadges.module.css';
+import { Tooltip } from '@app/features/ui/tooltip/Tooltip';
+import FocusRing from '@app/features/ui/focus_ring/FocusRing';
+import { handleExternalLinkClick } from '@app/features/ui/utils/NativeUtils';
 
 interface Badge {
   iconUrl: string;
@@ -39,51 +43,81 @@ const UserProfileBadgesWrapper = wrapComponent<UserProfileBadgesProps>(({ Origin
     };
   }, [userId]);
 
+  if (customBadges.length === 0) {
+    return <OriginalComponent {...props} />;
+  }
+
+  const isModal = !!props.isModal;
+  const isMobile = !!props.isMobile;
+  const isDesktopInteractions = !isMobile;
+
+  const containerClassName = isModal
+    ? [styles.containerModal, isMobile ? styles.containerModalMobile : styles.containerModalDesktop].filter(Boolean).join(' ')
+    : styles.containerPopout;
+
+  const badgeClassName = isModal && isMobile ? styles.badgeMobile : styles.badgeDesktop;
+
   const renderBadge = (badge: Badge, index: number) => {
-    const size = props.isModal ? '24px' : '22px';
-    const imgEl = (
+    const badgeContent = (
       <img
         src={badge.iconUrl}
         alt={badge.tooltip}
-        title={badge.tooltip}
+        className={badgeClassName}
         style={{
-          width: size,
-          height: size,
           borderRadius: '4px',
           objectFit: 'contain',
-          cursor: badge.url ? 'pointer' : 'default',
         }}
       />
     );
 
-    if (badge.url) {
+    const renderInteractiveWrapper = () => {
+      if (badge.url && isDesktopInteractions) {
+        return (
+          <a
+            href={badge.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className={styles.link}
+            onClick={(event) => handleExternalLinkClick(event, badge.url!)}
+          >
+            {badgeContent}
+          </a>
+        );
+      }
       return (
-        <a
-          key={index}
-          href={badge.url}
-          target="_blank"
-          rel="noopener noreferrer"
-          title={badge.tooltip}
-          style={{ display: 'inline-flex', padding: '1px' }}
-        >
-          {imgEl}
-        </a>
+        <div className={styles.link}>
+          {badgeContent}
+        </div>
       );
-    }
+    };
 
     return (
-      <div key={index} title={badge.tooltip} style={{ display: 'inline-flex', padding: '1px' }}>
-        {imgEl}
-      </div>
+      <Tooltip key={`custom-${index}`} text={badge.tooltip} maxWidth="xl">
+        <FocusRing offset={-2}>
+          {renderInteractiveWrapper()}
+        </FocusRing>
+      </Tooltip>
     );
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
-      <OriginalComponent {...props} />
+    <div className={containerClassName}>
+      <style>{`
+        .custom-badges-container-override > div {
+          position: static !important;
+          background: transparent !important;
+          padding: 0 !important;
+          border-radius: 0 !important;
+          display: contents !important;
+        }
+      `}</style>
+      <div className="custom-badges-container-override" style={{ display: 'contents' }}>
+        <OriginalComponent {...props} />
+      </div>
       {customBadges.map((badge, idx) => renderBadge(badge, idx))}
     </div>
   );
 });
 
 export default UserProfileBadgesWrapper;
+
