@@ -1,3 +1,8 @@
 [data-fluxer-scroll-container="true"] {
 	-webkit-overflow-scrolling: touch;
 }
+
+[data-flx="app.channel-list-content.channel-list-scroller-wrapper"] {
+	height: 100%;
+}
+
