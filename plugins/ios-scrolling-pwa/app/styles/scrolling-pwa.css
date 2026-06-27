@@ -3,10 +3,10 @@
 }
 
 [data-flx="app.channel-list-content.channel-list-scroller-wrapper"] {
-	height: 100% !important;
 	display: flex !important;
 	flex-direction: column !important;
 	min-height: 0 !important;
 }
+
 
 
