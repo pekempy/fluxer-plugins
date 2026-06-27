@@ -1,0 +1,10 @@
+name: "ios-scrolling-pwa"
+version: "1.0.0"
+description: "Injects stylesheet rules to fix scroll performance and behavior on iOS PWAs."
+author: "pekempy"
+license: "MIT"
+
+targets:
+  app:
+    styles:
+      - file: "./app/styles/scrolling-pwa.css"
