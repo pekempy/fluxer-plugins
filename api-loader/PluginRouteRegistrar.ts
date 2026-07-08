@@ -1,4 +1,5 @@
-import { Hono } from 'hono';
+import type { Hono as HonoType } from 'hono';
+import { getHonoClass } from './hono.js';
 import path from 'path';
 import type { LoadedPlugin } from '@pekempy/fluxer-plugin-sdk/types/plugin';
 import { getResolvableFileUrl, registerPluginHandler, getPluginHandler } from './HotReloader.js';
@@ -7,7 +8,8 @@ import { getResolvableFileUrl, registerPluginHandler, getPluginHandler } from '.
 import { ServiceMiddleware } from '../../fluxer_api/src/api/middleware/ServiceMiddleware.js';
 import { UserMiddleware } from '../../fluxer_api/src/api/middleware/UserMiddleware.js';
 
-export async function registerRoutes(app: Hono, plugins: LoadedPlugin[], forceReload = false) {
+export async function registerRoutes(app: any, plugins: LoadedPlugin[], forceReload = false) {
+  const Hono = await getHonoClass();
   for (const plugin of plugins) {
     const routes = plugin.manifest.targets?.api?.routes || [];
     for (const rt of routes) {
@@ -28,7 +30,7 @@ export async function registerRoutes(app: Hono, plugins: LoadedPlugin[], forceRe
         const subRouter = new Hono();
 
         subRouter.use('*', ServiceMiddleware);
-        subRouter.use('*', async (ctx, next) => {
+        subRouter.use('*', async (ctx: any, next: any) => {
           const path = ctx.req.path;
           if (path.endsWith('/users/tags') || ctx.req.header('x-internal-request') === 'true') {
             return next();

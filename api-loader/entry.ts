@@ -43,8 +43,8 @@ async function main(): Promise<void> {
   await setupEventHooks(loadedPlugins, eventBus);
 
   // 4. Patch Hono middleware registration and context services injection BEFORE creating app
-  patchHonoMiddleware(loadedPlugins);
-  patchHonoContext(eventBus);
+  await patchHonoMiddleware(loadedPlugins);
+  await patchHonoContext(eventBus);
 
   // 5. Create service decorator middleware & define dynamic delegate
   let activeDecoratorMiddleware = await createServiceDecoratorMiddleware(loadedPlugins, eventBus);

@@ -1,20 +1,22 @@
 import path from 'path';
-import { Hono } from 'hono';
+import type { Hono as HonoType } from 'hono';
 import type { Context } from 'hono';
+import { getHonoClass } from './hono.js';
 import type { LoadedPlugin } from '@pekempy/fluxer-plugin-sdk/types/plugin';
 import { wrapServiceWithEvents } from './PluginEventBus.js';
 import { getResolvableFileUrl } from './HotReloader.js';
 
 let contextProto: any = null;
 
-export function patchHonoContext(eventBus: any) {
+export async function patchHonoContext(eventBus: any) {
   if (!contextProto) {
+    const Hono = await getHonoClass();
     const dummyApp = new Hono();
-    dummyApp.all('*', (c) => {
+    dummyApp.all('*', (c: any) => {
       contextProto = Object.getPrototypeOf(c);
       return c.text('ok');
     });
-    dummyApp.fetch(new Request('http://localhost/'));
+    await dummyApp.fetch(new Request('http://localhost/'));
   }
 
   if (!contextProto) {

@@ -1,4 +1,5 @@
-import { Hono } from 'hono';
+import type { Hono as HonoType } from 'hono';
+import { getHonoClass } from './hono.js';
 import path from 'path';
 import type { LoadedPlugin } from '@pekempy/fluxer-plugin-sdk/types/plugin';
 import { registerPluginHandler, getPluginHandler, getResolvableFileUrl } from './HotReloader.js';
@@ -48,12 +49,14 @@ export async function registerPluginMiddlewares(plugins: LoadedPlugin[], forceRe
 }
 
 export async function patchHonoMiddleware(plugins: LoadedPlugin[]) {
+  const Hono = await getHonoClass();
+
   // Register initial handlers
   await registerPluginMiddlewares(plugins);
 
   const originalUse = Hono.prototype.use;
 
-  Hono.prototype.use = function (this: Hono, ...args: any[]) {
+  Hono.prototype.use = function (this: any, ...args: any[]) {
     let pathArg = '*';
     let handlers: any[] = [];
 
