@@ -2,6 +2,26 @@ import React from 'react';
 import { wrapComponent } from '@pekempy/fluxer-plugin-sdk/helpers/app';
 import type { ComponentWrapper } from '@pekempy/fluxer-plugin-sdk/types/app';
 import { observer } from 'mobx-react-lite';
+import { runInAction } from 'mobx';
+import Discovery from '@app/features/discovery/state/Discovery';
+import { DiscoveryCategoryLabels } from '@fluxer/constants/src/DiscoveryConstants';
+
+// Patch DiscoveryCategoryLabels at module load time (runs when the plugin is first imported).
+// This ensures cards on the discovery page use the server-configured custom category names
+// instead of the hardcoded constants, even before any component mounts.
+void Discovery.loadCategories().then(() => {
+  const categories = Discovery.categories;
+  if (!categories || categories.length === 0) return;
+  for (const cat of categories as { id: number; name: string }[]) {
+    (DiscoveryCategoryLabels as Record<number, string>)[cat.id] = cat.name;
+  }
+  // If guilds are already rendered, force re-render so cards pick up the patched labels
+  runInAction(() => {
+    if (Discovery.guilds.length > 0) {
+      Discovery.guilds = [...Discovery.guilds];
+    }
+  });
+});
 
 import {useFormSubmit} from '@app/features/app/hooks/useFormSubmit';
 import * as GuildCommands from '@app/features/guild/commands/GuildCommands';
