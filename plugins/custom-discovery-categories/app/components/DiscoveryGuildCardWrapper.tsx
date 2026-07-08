@@ -1,34 +1,44 @@
-import React from 'react';
+import React, { useLayoutEffect, useRef, useEffect } from 'react';
 import { wrapComponent } from '@pekempy/fluxer-plugin-sdk/helpers/app';
 import type { ComponentWrapper } from '@pekempy/fluxer-plugin-sdk/types/app';
 import { observer } from 'mobx-react-lite';
 import Discovery from '@app/features/discovery/state/Discovery';
-import { DiscoveryCategoryLabels } from '@fluxer/constants/src/DiscoveryConstants';
-import { useEffect } from 'react';
 
 /**
- * Wraps DiscoveryGuildCard to patch the DiscoveryCategoryLabels static map
- * in-place with the dynamic categories fetched from the API, before the
- * original component renders so it picks up the custom names automatically.
+ * Wraps DiscoveryGuildCard to replace the category label text with the
+ * custom category name from the API, bypassing the hardcoded DiscoveryCategoryLabels map.
+ *
+ * We use a ref + useLayoutEffect to directly update the text of the category
+ * span after every render — this runs synchronously before paint so there's
+ * no flicker, and runs again whenever Discovery.categories updates (via MobX observer).
  */
 const DiscoveryGuildCardWrapper: ComponentWrapper = observer(({ OriginalComponent, ...props }) => {
+  const guild = (props as any).guild;
   const categories = Discovery.categories;
+  const containerRef = useRef<HTMLDivElement>(null);
 
-  // Load categories from the API if not yet loaded
+  // Ensure categories are loaded from the API
   useEffect(() => {
     void Discovery.loadCategories();
   }, []);
 
-  // Mutate the static label map before OriginalComponent renders.
-  // Both this module and DiscoveryGuildCard import the same ESM singleton,
-  // so patching it here is immediately visible to OriginalComponent.
-  if (categories && categories.length > 0) {
-    for (const cat of categories as { id: number; name: string }[]) {
-      (DiscoveryCategoryLabels as Record<number, string>)[cat.id] = cat.name;
-    }
-  }
+  // After every render (including when categories load), update the category span text
+  useLayoutEffect(() => {
+    if (!containerRef.current || !categories || categories.length === 0) return;
+    const span = containerRef.current.querySelector(
+      '[data-flx="discovery.discovery.discovery-guild-card.category"]'
+    ) as HTMLElement | null;
+    if (!span || guild?.category_type == null) return;
+    const match = categories.find((c: { id: number; name: string }) => c.id === guild.category_type);
+    if (match) span.textContent = match.name;
+  });
 
-  return <OriginalComponent {...(props as any)} />;
+  return (
+    // display:contents makes this div invisible to layout so card grid is unaffected
+    <div ref={containerRef} style={{ display: 'contents' }}>
+      <OriginalComponent {...(props as any)} />
+    </div>
+  );
 });
 
 export default wrapComponent(DiscoveryGuildCardWrapper);
