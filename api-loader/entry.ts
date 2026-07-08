@@ -9,7 +9,7 @@ import { createServer, setupGracefulShutdown } from '@fluxer/hono/src/Server.js'
 
 import path from 'path';
 import { discoverPlugins } from './PluginDiscovery.js';
-import { patchHonoMiddleware, registerPluginMiddlewares } from './PluginMiddlewareInjector.js';
+import { injectPluginMiddlewares, registerPluginMiddlewares } from './PluginMiddlewareInjector.js';
 import { patchHonoContext, createServiceDecoratorMiddleware } from './PluginServiceDecorator.js';
 import { registerRoutes, reloadPluginRoutes } from './PluginRouteRegistrar.js';
 import { PluginEventBus, setupEventHooks } from './PluginEventBus.js';
@@ -42,8 +42,7 @@ async function main(): Promise<void> {
   const eventBus = new PluginEventBus();
   await setupEventHooks(loadedPlugins, eventBus);
 
-  // 4. Patch Hono middleware registration and context services injection BEFORE creating app
-  await patchHonoMiddleware(loadedPlugins);
+  // 4. Patch Hono context services injection BEFORE creating app
   await patchHonoContext(eventBus);
 
   // 5. Create service decorator middleware & define dynamic delegate
@@ -82,10 +81,13 @@ async function main(): Promise<void> {
     logger: Logger,
   });
 
-  // 8. Register plugin routes
+  // 8. Inject plugin middlewares directly onto the app instance (runs before route handlers)
+  await injectPluginMiddlewares(app as any, loadedPlugins);
+
+  // 9. Register plugin routes
   await registerRoutes(app as any, loadedPlugins);
 
-  // 9. Call init lifecycle on plugins
+  // 10. Call init lifecycle on plugins
   for (const plugin of loadedPlugins) {
     if (plugin.module.init) {
       try {
@@ -96,7 +98,7 @@ async function main(): Promise<void> {
     }
   }
 
-  // 10. Start service initialization
+  // 11. Start service initialization
   await initialize();
 
   process.on('uncaughtException', (error) => {
@@ -106,11 +108,11 @@ async function main(): Promise<void> {
     Logger.error({ reason }, 'Unhandled rejection (suppressed)');
   });
 
-  // 11. Start HTTP Server
+  // 12. Start HTTP Server
   const server = createServer(app, { port: (Config as any).port });
   Logger.info({ port: (Config as any).port }, `Starting Fluxer API (with Plugins) on port ${(Config as any).port}`);
 
-  // 12. Setup hot reload watcher if enabled
+  // 13. Setup hot reload watcher if enabled
   if (process.env.FLUXER_DEV === 'true' || process.env.NODE_ENV !== 'production') {
     startWatcher(pluginsDir, async (fileChanged) => {
       Logger.info('[Loader] Hot-reloading changed plugin modules...');
