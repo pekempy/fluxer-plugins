@@ -1,8 +1,27 @@
 import { createMiddleware } from '@pekempy/fluxer-plugin-sdk/helpers/api';
-import { getCategories } from '../utils/ConfigHelper.js';
+import { getCategories, getCustomCategoryIds } from '../utils/ConfigHelper.js';
+let patchApplied = false;
+function applySetPatch() {
+    if (patchApplied)
+        return;
+    patchApplied = true;
+    const originalHas = Set.prototype.has;
+    Set.prototype.has = function (value) {
+        // Identify the target validation Set: it has exactly size 9 and contains all default category IDs (0 to 8)
+        const isCategorySet = this.size === 9 &&
+            [0, 1, 2, 3, 4, 5, 6, 7, 8].every(v => originalHas.call(this, v));
+        if (isCategorySet) {
+            const customIds = getCustomCategoryIds();
+            return customIds.includes(Number(value));
+        }
+        return originalHas.call(this, value);
+    };
+}
 export default createMiddleware({
     position: 'before:ServiceMiddleware',
     handler: async (ctx, next) => {
+        // Apply the Set.prototype.has monkeypatch on first request inside the API process
+        applySetPatch();
         const pathName = ctx.req.path;
         const isCategoryRequest = pathName === '/discovery/categories' || pathName === '/v1/discovery/categories';
         const isDiscoveryModify = pathName.includes('/discovery') && (ctx.req.method === 'POST' || ctx.req.method === 'PATCH' || ctx.req.method === 'PUT');
