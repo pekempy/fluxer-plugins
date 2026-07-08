@@ -23,7 +23,7 @@ export default createMiddleware({
         // Apply the Set.prototype.has monkeypatch on first request inside the API process
         applySetPatch();
         const pathName = ctx.req.path;
-        const isCategoryRequest = pathName === '/discovery/categories' || pathName === '/v1/discovery/categories';
+        const isCategoryRequest = pathName.endsWith('/discovery/categories');
         const isDiscoveryModify = pathName.includes('/discovery') && (ctx.req.method === 'POST' || ctx.req.method === 'PATCH' || ctx.req.method === 'PUT');
         if (isCategoryRequest || isDiscoveryModify) {
             try {
