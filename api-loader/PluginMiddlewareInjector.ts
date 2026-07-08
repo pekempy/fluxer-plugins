@@ -50,12 +50,20 @@ export async function registerPluginMiddlewares(plugins: LoadedPlugin[], forceRe
 
 export async function patchHonoMiddleware(plugins: LoadedPlugin[]) {
   const Hono = await getHonoClass();
+  
+  console.log('[PluginMiddlewareInjector] Hono class is:', Hono ? 'found' : 'missing');
+  if (!Hono || !Hono.prototype) {
+    console.log('[PluginMiddlewareInjector] Hono.prototype is missing!');
+    return;
+  }
+  
+  console.log('[PluginMiddlewareInjector] Hono.prototype.use is:', Hono.prototype.use ? 'found' : 'missing');
 
   // Register initial handlers
   await registerPluginMiddlewares(plugins);
 
   const originalUse = Hono.prototype.use;
-
+  
   Hono.prototype.use = function (this: any, ...args: any[]) {
     let pathArg = '*';
     let handlers: any[] = [];
