@@ -1,0 +1,29 @@
+name: "custom-discovery-categories"
+version: "1.0.0"
+description: "Allows custom discovery categories/badges managed via the admin dashboard."
+author: "pekempy"
+license: "MIT"
+
+targets:
+  api:
+    middleware:
+      - file: "./api/middleware/SyncCategoriesMiddleware.ts"
+        position: "before:ServiceMiddleware"
+
+  app:
+    components:
+      - target: "features/guild/components/modals/guild_tabs/GuildDiscoveryTab"
+        wrapper: "./app/components/GuildDiscoveryTabWrapper.tsx"
+
+  admin:
+    pages:
+      - path: "/plugins/custom-discovery-categories/manage"
+        handler: "./admin/pages/ManageCategories.ts"
+        nav:
+          label: "Discovery Categories"
+          icon: "compass"
+          section: "plugins"
+    api:
+      - method: "POST"
+        path: "/plugins/custom-discovery-categories/api/save"
+        handler: "./admin/api/save.ts"
