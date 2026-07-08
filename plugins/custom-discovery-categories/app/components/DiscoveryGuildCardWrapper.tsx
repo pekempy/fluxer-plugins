@@ -3,47 +3,32 @@ import { wrapComponent } from '@pekempy/fluxer-plugin-sdk/helpers/app';
 import type { ComponentWrapper } from '@pekempy/fluxer-plugin-sdk/types/app';
 import { observer } from 'mobx-react-lite';
 import Discovery from '@app/features/discovery/state/Discovery';
+import { DiscoveryCategoryLabels } from '@fluxer/constants/src/DiscoveryConstants';
 import { useEffect } from 'react';
 
 /**
- * Wraps DiscoveryGuildCard to patch the category label element after render,
- * replacing the hardcoded DiscoveryCategoryLabels lookup with the dynamic
- * categories fetched from the API (Discovery.categories MobX store).
+ * Wraps DiscoveryGuildCard to patch the DiscoveryCategoryLabels static map
+ * in-place with the dynamic categories fetched from the API, before the
+ * original component renders so it picks up the custom names automatically.
  */
 const DiscoveryGuildCardWrapper: ComponentWrapper = observer(({ OriginalComponent, ...props }) => {
-  // Ensure categories are loaded from the API
+  const categories = Discovery.categories;
+
+  // Load categories from the API if not yet loaded
   useEffect(() => {
     void Discovery.loadCategories();
   }, []);
 
-  // Intercept the guild prop to inject a patched category label lookup
-  const guild = (props as any).guild;
-  const categories = Discovery.categories;
-
-  // Build a patched guild object that resolves the category name dynamically
-  const patchedGuild = React.useMemo(() => {
-    if (!guild || !categories || categories.length === 0) return guild;
-    return guild;
-  }, [guild, categories]);
-
-  // Clone the rendered output and replace the category text node
-  const ref = React.useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!ref.current || !categories || categories.length === 0 || !guild) return;
-    const categoryEl = ref.current.querySelector('[data-flx="discovery.discovery.discovery-guild-card.category"]');
-    if (!categoryEl) return;
-    const match = categories.find((c: { id: number; name: string }) => c.id === guild.category_type);
-    if (match) {
-      categoryEl.textContent = match.name;
+  // Mutate the static label map before OriginalComponent renders.
+  // Both this module and DiscoveryGuildCard import the same ESM singleton,
+  // so patching it here is immediately visible to OriginalComponent.
+  if (categories && categories.length > 0) {
+    for (const cat of categories as { id: number; name: string }[]) {
+      (DiscoveryCategoryLabels as Record<number, string>)[cat.id] = cat.name;
     }
-  });
+  }
 
-  return (
-    <div ref={ref} style={{ display: 'contents' }}>
-      <OriginalComponent {...(props as any)} guild={patchedGuild} />
-    </div>
-  );
+  return <OriginalComponent {...(props as any)} />;
 });
 
 export default wrapComponent(DiscoveryGuildCardWrapper);
