@@ -31,7 +31,8 @@ export async function getCategories() {
         updateCustomCategoryIds(DEFAULT_CATEGORIES);
         return DEFAULT_CATEGORIES;
     }
-    catch {
+    catch (err) {
+        console.error('[Custom Discovery Categories ConfigHelper] Failed to read or parse config file:', err?.message || err);
         updateCustomCategoryIds(DEFAULT_CATEGORIES);
         return DEFAULT_CATEGORIES;
     }
