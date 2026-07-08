@@ -32,6 +32,8 @@ export default createMiddleware({
     const isCategoryRequest = pathName.endsWith('/discovery/categories');
     const isDiscoveryModify = pathName.includes('/discovery') && (ctx.req.method === 'POST' || ctx.req.method === 'PATCH' || ctx.req.method === 'PUT');
 
+    console.log('[SyncCategoriesMiddleware] Intercepted path:', pathName, 'isCategoryRequest:', isCategoryRequest, 'isDiscoveryModify:', isDiscoveryModify);
+
     if (isCategoryRequest || isDiscoveryModify) {
       try {
         const categories = await getCategories();

@@ -67,6 +67,8 @@ export async function patchHonoMiddleware(plugins: LoadedPlugin[]) {
       handlers = args;
     }
 
+    console.log('[PluginMiddlewareInjector] use() called for path:', pathArg, 'handlers count:', handlers.length);
+
     const injectedHandlers: any[] = [];
 
     for (const handler of handlers) {
@@ -77,22 +79,27 @@ export async function patchHonoMiddleware(plugins: LoadedPlugin[]) {
           if (mw.position.startsWith('before:')) {
             const targetName = mw.position.substring(7);
             const targetRef = middlewareMap[targetName];
-            if (targetRef && handler === targetRef) {
-              const pluginContext = plugin.context;
-              
-              if (mw.file) {
-                const registryKey = `${plugin.name}:mw:${mw.position}:${mw.file}`;
-                const wrappedHandler = async (ctx: any, next: any) => {
-                  const latestHandler = getPluginHandler(registryKey);
-                  return latestHandler(ctx, next);
-                };
-                pluginContext.logger.debug(`Injecting middleware from '${plugin.name}' before '${targetName}'`);
-                injectedHandlers.push(wrappedHandler);
-              } else if (mw.handler) { // For virtual system plugin
-                const wrappedHandler = async (ctx: any, next: any) => {
-                  return mw.handler(ctx, next);
-                };
-                injectedHandlers.push(wrappedHandler);
+            if (targetRef) {
+              const matched = handler === targetRef;
+              console.log(`[PluginMiddlewareInjector] Matching handler against target ${targetName}:`, matched);
+              if (matched) {
+                const pluginContext = plugin.context;
+                
+                if (mw.file) {
+                  const registryKey = `${plugin.name}:mw:${mw.position}:${mw.file}`;
+                  const wrappedHandler = async (ctx: any, next: any) => {
+                    const latestHandler = getPluginHandler(registryKey);
+                    return latestHandler(ctx, next);
+                  };
+                  console.log(`[PluginMiddlewareInjector] INJECTING middleware from '${plugin.name}' before '${targetName}'`);
+                  pluginContext.logger.info(`Injecting middleware from '${plugin.name}' before '${targetName}'`);
+                  injectedHandlers.push(wrappedHandler);
+                } else if (mw.handler) { // For virtual system plugin
+                  const wrappedHandler = async (ctx: any, next: any) => {
+                    return mw.handler(ctx, next);
+                  };
+                  injectedHandlers.push(wrappedHandler);
+                }
               }
             }
           }
