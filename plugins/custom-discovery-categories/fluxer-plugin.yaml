@@ -14,6 +14,9 @@ targets:
     components:
       - target: "features/guild/components/modals/guild_tabs/GuildDiscoveryTab"
         wrapper: "./app/components/GuildDiscoveryTabWrapper.tsx"
+    stores:
+      - target: "features/discovery/state/Discovery"
+        decorator: "./app/stores/DiscoveryStoreDecorator.ts"
 
   admin:
     pages:
