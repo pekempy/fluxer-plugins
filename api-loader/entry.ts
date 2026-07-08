@@ -9,7 +9,8 @@ import { createServer, setupGracefulShutdown } from '@fluxer/hono/src/Server.js'
 
 import path from 'path';
 import { discoverPlugins } from './PluginDiscovery.js';
-import { injectPluginMiddlewares, registerPluginMiddlewares } from './PluginMiddlewareInjector.js';
+import { buildPluginMiddlewareHandlers, registerPluginMiddlewares } from './PluginMiddlewareInjector.js';
+import { getHonoClass } from './hono.js';
 import { patchHonoContext, createServiceDecoratorMiddleware } from './PluginServiceDecorator.js';
 import { registerRoutes, reloadPluginRoutes } from './PluginRouteRegistrar.js';
 import { PluginEventBus, setupEventHooks } from './PluginEventBus.js';
@@ -75,19 +76,33 @@ async function main(): Promise<void> {
   };
   loadedPlugins.unshift(systemPlugin as any); // Put at front so it gets matched
 
-  // 7. Create Hono app
-  const { app, initialize, shutdown } = await createAPIApp({
+  // 7. Create the inner API app (routes already registered inside)
+  const { app: innerApp, initialize, shutdown } = await createAPIApp({
     config: Config,
     logger: Logger,
   });
 
-  // 8. Inject plugin middlewares directly onto the app instance (runs before route handlers)
-  await injectPluginMiddlewares(app as any, loadedPlugins);
+  // 8. Create a fresh wrapper Hono app so we can inject plugin middlewares BEFORE
+  //    the inner app's route handlers. Registering use() after route() on the same
+  //    app doesn't work — Hono executes handlers in registration order and routes
+  //    respond without calling next(), so middleware added after routes never runs.
+  const HonoClass = await getHonoClass();
+  const app = new HonoClass();
 
-  // 9. Register plugin routes
+  // 9. Inject plugin middlewares onto the clean wrapper app (no routes yet → guaranteed first)
+  const pluginHandlers = await buildPluginMiddlewareHandlers(loadedPlugins);
+  for (const { name, position, handler } of pluginHandlers) {
+    app.use('*', handler);
+    console.log(`[PluginMiddlewareInjector] Registered plugin middleware '${name}' (${position}) on wrapper app`);
+  }
+
+  // 10. Mount the inner app (all its routes come after our middleware in the chain)
+  app.route('/', innerApp);
+
+  // 11. Register plugin routes on wrapper app
   await registerRoutes(app as any, loadedPlugins);
 
-  // 10. Call init lifecycle on plugins
+  // 12. Call init lifecycle on plugins
   for (const plugin of loadedPlugins) {
     if (plugin.module.init) {
       try {
@@ -98,7 +113,7 @@ async function main(): Promise<void> {
     }
   }
 
-  // 11. Start service initialization
+  // 13. Start service initialization
   await initialize();
 
   process.on('uncaughtException', (error) => {
@@ -108,11 +123,11 @@ async function main(): Promise<void> {
     Logger.error({ reason }, 'Unhandled rejection (suppressed)');
   });
 
-  // 12. Start HTTP Server
+  // 14. Start HTTP Server
   const server = createServer(app, { port: (Config as any).port });
   Logger.info({ port: (Config as any).port }, `Starting Fluxer API (with Plugins) on port ${(Config as any).port}`);
 
-  // 13. Setup hot reload watcher if enabled
+  // 15. Setup hot reload watcher if enabled
   if (process.env.FLUXER_DEV === 'true' || process.env.NODE_ENV !== 'production') {
     startWatcher(pluginsDir, async (fileChanged) => {
       Logger.info('[Loader] Hot-reloading changed plugin modules...');

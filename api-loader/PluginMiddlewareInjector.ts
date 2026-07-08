@@ -29,14 +29,22 @@ export async function registerPluginMiddlewares(plugins: LoadedPlugin[], forceRe
   }
 }
 
+export interface PluginMiddlewareEntry {
+  name: string;
+  position: string;
+  handler: (ctx: any, next: any) => Promise<any>;
+}
+
 /**
- * Injects plugin middlewares directly onto the Hono app instance.
- * This replaces the broken Hono.prototype.use monkeypatching approach.
- * In Hono, app.use() always runs before route handlers regardless of registration order.
+ * Builds the list of hot-reloadable middleware handler delegates for all plugins.
+ * These are intended to be registered on a FRESH Hono wrapper app BEFORE the inner
+ * app is mounted, so they always run before any route handler.
  */
-export async function injectPluginMiddlewares(app: any, plugins: LoadedPlugin[]) {
-  // Register all handler files into the hot-reload registry first
+export async function buildPluginMiddlewareHandlers(plugins: LoadedPlugin[]): Promise<PluginMiddlewareEntry[]> {
+  // Register all file-based handlers into the hot-reload registry
   await registerPluginMiddlewares(plugins);
+
+  const entries: PluginMiddlewareEntry[] = [];
 
   for (const plugin of plugins) {
     const middlewares = (plugin.manifest.targets?.api?.middleware || []) as any[];
@@ -44,19 +52,18 @@ export async function injectPluginMiddlewares(app: any, plugins: LoadedPlugin[])
     for (const mw of middlewares) {
       if (mw.file) {
         const registryKey = `${plugin.name}:mw:${mw.position}:${mw.file}`;
-        const wrappedHandler = async (ctx: any, next: any) => {
+        // Create a hot-reloadable delegate that always calls the latest registered handler
+        const delegate = async (ctx: any, next: any) => {
           const latestHandler = getPluginHandler(registryKey);
           return latestHandler(ctx, next);
         };
-
-        app.use('*', wrappedHandler);
-        plugin.context.logger.info(`[PluginMiddlewareInjector] Injected middleware from '${plugin.name}' (${mw.position}) directly onto app`);
-        console.log(`[PluginMiddlewareInjector] Injected middleware from '${plugin.name}' (position: ${mw.position}) onto app`);
+        entries.push({ name: plugin.name, position: mw.position, handler: delegate });
       } else if (mw.handler) {
-        // Virtual/inline handler (used by system plugin)
-        app.use('*', mw.handler);
-        console.log(`[PluginMiddlewareInjector] Injected inline handler from '${plugin.name}' (position: ${mw.position}) onto app`);
+        // Inline/virtual handler (e.g. system-injections)
+        entries.push({ name: plugin.name, position: mw.position, handler: mw.handler });
       }
     }
   }
+
+  return entries;
 }
