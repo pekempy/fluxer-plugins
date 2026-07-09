@@ -6,7 +6,7 @@ license: "MIT"
 
 targets:
   app:
-    wrappers:
+    components:
       - target: "features/app/components/layout/DndContext"
         wrapper: "./app/components/DndContextWrapper.tsx"
       - target: "features/app/components/layout/ChannelItem"
