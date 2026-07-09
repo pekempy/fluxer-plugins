@@ -11,8 +11,8 @@
 /* Fix mobile size scrolling in the channel list (iOS Safari / PWA) */
 @media (max-width: 767px) {
 	[data-flx="app.guild-sidebar.guild-navbar"] {
-		height: 100vh !important;
-		max-height: 100vh !important;
+		height: 100% !important;
+		max-height: 100% !important;
 		display: flex !important;
 		flex-direction: column !important;
 		overflow: hidden !important;
@@ -20,7 +20,7 @@
 
 	[data-flx="app.channel-list-content.channel-list-scroller-wrapper"] {
 		flex: 1 1 0% !important;
-		height: 0 !important; /* Forces the flex container to shrink and overflow scroll */
+		height: 100% !important;
 		min-height: 0 !important;
 		overflow: hidden !important;
 	}
@@ -28,5 +28,10 @@
 	[data-flx="app.channel-list-content.channel-list-scroller"] {
 		height: 100% !important;
 		overflow: hidden !important;
+	}
+
+	[data-fluxer-scroll-container="true"] {
+		overflow-y: scroll !important;
+		-webkit-overflow-scrolling: touch !important;
 	}
 }
