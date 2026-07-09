@@ -23,7 +23,7 @@ const TOUCH_DND_OPTIONS = {
 		{
 			id: 'touch',
 			backend: TouchBackend,
-			options: { enableMouseEvents: false },
+			options: { enableMouseEvents: false, delay: 300 },
 			preview: true,
 			transition: TouchTransition,
 		},
