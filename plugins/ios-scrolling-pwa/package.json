@@ -8,7 +8,8 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@pekempy/fluxer-plugin-sdk": "link:../../sdk"
+    "@pekempy/fluxer-plugin-sdk": "link:../../sdk",
+    "react-dnd-touch-backend": "^16.0.1"
   },
   "devDependencies": {
     "@types/node": "^24.0.4",

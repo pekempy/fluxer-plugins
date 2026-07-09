@@ -7,6 +7,8 @@ license: "MIT"
 targets:
   app:
     wrappers:
+      - target: "features/app/components/layout/DndContext"
+        wrapper: "./app/components/DndContextWrapper.tsx"
       - target: "features/app/components/layout/ChannelItem"
         wrapper: "./app/components/ChannelItemWrapper.tsx"
       - target: "features/app/components/layout/sidebar_nav/GuildListItem"
