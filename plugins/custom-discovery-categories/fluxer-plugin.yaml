@@ -19,6 +19,9 @@ targets:
     stores:
       - target: "features/discovery/state/Discovery"
         decorator: "./app/stores/DiscoveryStoreDecorator.ts"
+    styles:
+      - file: "./app/styles.css"
+
 
   admin:
     pages:

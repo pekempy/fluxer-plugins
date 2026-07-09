@@ -22,15 +22,28 @@ const DiscoveryGuildCardWrapper: ComponentWrapper = observer(({ OriginalComponen
     void Discovery.loadCategories();
   }, []);
 
-  // After every render (including when categories load), update the category span text
+  // After every render (including when categories load), update/inject the category span text
   useLayoutEffect(() => {
     if (!containerRef.current || !categories || categories.length === 0) return;
     const span = containerRef.current.querySelector(
       '[data-flx="discovery.discovery.discovery-guild-card.category"]'
     ) as HTMLElement | null;
     if (!span || guild?.category_type == null) return;
+
+    // Check if we already injected our custom label
+    let customSpan = span.parentElement?.querySelector('.custom-category-badge') as HTMLElement | null;
+    if (!customSpan) {
+      customSpan = document.createElement('span');
+      customSpan.className = 'custom-category-badge ' + span.className;
+      // Copy over data-flx for testing if needed or keep it clean
+      customSpan.setAttribute('data-flx-custom', 'discovery.discovery.discovery-guild-card.custom-category');
+      span.parentNode?.insertBefore(customSpan, span.nextSibling);
+    }
+
     const match = categories.find((c: { id: number; name: string }) => c.id === guild.category_type);
-    if (match) span.textContent = match.name;
+    if (match) {
+      customSpan.textContent = match.name;
+    }
   });
 
   return (
@@ -42,3 +55,4 @@ const DiscoveryGuildCardWrapper: ComponentWrapper = observer(({ OriginalComponen
 });
 
 export default wrapComponent(DiscoveryGuildCardWrapper);
+
