@@ -5,6 +5,7 @@ import KeyboardBackend, {isKeyboardDragTrigger} from 'react-dnd-accessible-backe
 import {HTML5Backend} from 'react-dnd-html5-backend';
 import {createTransition, MouseTransition, MultiBackend, TouchTransition} from 'react-dnd-multi-backend';
 import {TouchBackend} from 'react-dnd-touch-backend';
+import { wrapComponent } from '@pekempy/fluxer-plugin-sdk/helpers/app';
 
 const KeyboardTransition = createTransition('keydown', (event: Event) => {
 	if (!isKeyboardDragTrigger(event as KeyboardEvent)) return false;
@@ -36,14 +37,12 @@ const TOUCH_DND_OPTIONS = {
 	],
 };
 
-const DndContextWrapper = (OriginalComponent: any) => {
-  return (props: any) => {
-    return (
-      <DndProvider backend={MultiBackend} options={TOUCH_DND_OPTIONS}>
-        {props.children}
-      </DndProvider>
-    );
-  };
+const DndContextWrapper = ({ OriginalComponent, ...props }) => {
+  return (
+    <DndProvider backend={MultiBackend} options={TOUCH_DND_OPTIONS}>
+      {props.children}
+    </DndProvider>
+  );
 };
 
-export default DndContextWrapper;
+export default wrapComponent(DndContextWrapper);

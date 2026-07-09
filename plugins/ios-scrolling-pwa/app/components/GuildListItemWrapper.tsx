@@ -1,19 +1,18 @@
 // @ts-nocheck
 import React from 'react';
+import { wrapComponent } from '@pekempy/fluxer-plugin-sdk/helpers/app';
 
-const GuildListItemWrapper = (OriginalComponent: any) => {
-  return (props: any) => {
+const GuildListItemWrapper = ({ OriginalComponent, ...props }) => {
+  if (typeof window !== 'undefined') {
+    (window as any).__BYPASS_MOBILE_DND__ = true;
+  }
+  try {
+    return <OriginalComponent {...props} />;
+  } finally {
     if (typeof window !== 'undefined') {
-      (window as any).__BYPASS_MOBILE_DND__ = true;
+      (window as any).__BYPASS_MOBILE_DND__ = false;
     }
-    try {
-      return <OriginalComponent {...props} />;
-    } finally {
-      if (typeof window !== 'undefined') {
-        (window as any).__BYPASS_MOBILE_DND__ = false;
-      }
-    }
-  };
+  }
 };
 
-export default GuildListItemWrapper;
+export default wrapComponent(GuildListItemWrapper);
