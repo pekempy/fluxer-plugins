@@ -34,4 +34,8 @@
 		overflow-y: scroll !important;
 		-webkit-overflow-scrolling: touch !important;
 	}
+
+	[data-flx="app.channel-list-content.channel-groups-container"] {
+		padding-bottom: 15% !important;
+	}
 }
