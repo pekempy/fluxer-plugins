@@ -6,5 +6,16 @@ license: "MIT"
 
 targets:
   app:
+    wrappers:
+      - target: "features/app/components/layout/ChannelItem"
+        wrapper: "./app/components/ChannelItemWrapper.tsx"
+      - target: "features/app/components/layout/sidebar_nav/GuildListItem"
+        wrapper: "./app/components/GuildListItemWrapper.tsx"
+      - target: "features/app/components/layout/sidebar_nav/GuildFolderItem"
+        wrapper: "./app/components/GuildFolderItemWrapper.tsx"
+    stores:
+      - target: "features/ui/state/MobileLayout"
+        decorator: "./app/stores/MobileLayoutDecorator.ts"
     styles:
       - file: "./app/styles/scrolling-pwa.css"
+
