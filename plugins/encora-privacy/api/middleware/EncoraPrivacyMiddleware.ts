@@ -12,21 +12,34 @@ const getPluginConfigPath = (filename: string) => {
   return path.resolve(process.cwd(), 'plugins', 'config', filename);
 };
 
-const configPath = getPluginConfigPath('encora-privacy.json');
 const badgesConfigPath = getPluginConfigPath('custom-badges.json');
 
-let privacyMap: Record<string, boolean> = {};
-let lastLoadTime = 0;
+let dbClient: any = null;
 
-async function loadPrivacyConfig() {
-  if (Date.now() - lastLoadTime < 2000) return;
+async function getDB() {
+  if (dbClient) return dbClient;
   try {
-    const data = await fs.readFile(configPath, 'utf-8');
-    privacyMap = JSON.parse(data) || {};
-    lastLoadTime = Date.now();
-  } catch {
-    privacyMap = {};
+    const clientPath = path.resolve(process.cwd(), 'node_modules', '@pkgs', 'postgres', 'src', 'Client.ts');
+    const { getDefaultPostgresClient } = await import(clientPath);
+    dbClient = getDefaultPostgresClient();
+  } catch (err) {
+    console.error('[Encora Privacy Plugin] Failed to import Postgres client in middleware:', err);
   }
+  return dbClient;
+}
+
+async function getPrivacySetting(userId: string): Promise<boolean> {
+  const db = await getDB();
+  if (!db) return false;
+  try {
+    const res = await db.query('SELECT hide_encora FROM encora_privacy WHERE user_id = $1 LIMIT 1', [userId]);
+    if (res.rows[0]) {
+      return !!res.rows[0].hide_encora;
+    }
+  } catch (err) {
+    // If the table doesn't exist yet, return false
+  }
+  return false;
 }
 
 async function isUserEncoraStaff(userId: string): Promise<boolean> {
@@ -56,13 +69,12 @@ export default createMiddleware({
 
     console.log('[EncoraPrivacyMiddleware] Matching path intercepted:', pathName);
 
-    await loadPrivacyConfig();
-
     const targetIdStr = profileMatch ? profileMatch[1] : badgesMatch![1];
-    console.log(`[EncoraPrivacyMiddleware] Target User ID: ${targetIdStr}, Privacy Enabled: ${!!privacyMap[targetIdStr]}`);
+    const hideEncora = await getPrivacySetting(targetIdStr);
+    console.log(`[EncoraPrivacyMiddleware] Target User ID: ${targetIdStr}, Privacy Enabled: ${hideEncora}`);
 
     // If target user doesn't hide Encora, proceed normally
-    if (!privacyMap[targetIdStr]) {
+    if (!hideEncora) {
       return next();
     }
 

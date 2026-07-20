@@ -1,61 +1,60 @@
 // @ts-nocheck
 import { createRoute } from '@pekempy/fluxer-plugin-sdk/helpers/api';
-import { promises as fs } from 'fs';
 import path from 'path';
 
-const getPluginConfigPath = (filename: string) => {
-  if (process.env.FLUXER_PLUGIN_CONFIG_DIR) {
-    return path.join(process.env.FLUXER_PLUGIN_CONFIG_DIR, filename);
-  }
-  if (process.env.FLUXER_PLUGIN_DIR) {
-    return path.join(process.env.FLUXER_PLUGIN_DIR, 'config', filename);
-  }
-  return path.resolve(process.cwd(), 'plugins', 'config', filename);
-};
+let dbClient: any = null;
 
-const configPath = getPluginConfigPath('encora-privacy.json');
-const badgesConfigPath = getPluginConfigPath('custom-badges.json');
-
-// Memory cache for privacy preferences
-let privacyMap: Record<string, boolean> = {};
-
-async function loadPrivacyConfig() {
+async function getDB() {
+  if (dbClient) return dbClient;
   try {
-    const data = await fs.readFile(configPath, 'utf-8');
-    privacyMap = JSON.parse(data) || {};
-  } catch {
-    privacyMap = {};
-  }
-}
-
-async function savePrivacyConfig() {
-  try {
-    await fs.mkdir(path.dirname(configPath), { recursive: true });
-    await fs.writeFile(configPath, JSON.stringify(privacyMap, null, 2), 'utf-8');
+    const clientPath = path.resolve(process.cwd(), 'node_modules', '@pkgs', 'postgres', 'src', 'Client.ts');
+    const { getDefaultPostgresClient } = await import(clientPath);
+    dbClient = getDefaultPostgresClient();
+    // Initialize table
+    await dbClient.query(`
+      CREATE TABLE IF NOT EXISTS encora_privacy (
+        user_id VARCHAR(64) PRIMARY KEY,
+        hide_encora BOOLEAN NOT NULL DEFAULT FALSE
+      )
+    `);
   } catch (err) {
-    console.error('[Encora Privacy Plugin] Failed to save config:', err);
+    console.error('[Encora Privacy Plugin] Failed to initialize Postgres DB:', err);
   }
+  return dbClient;
 }
 
-// Helper to check if a user is Encora Staff
-async function isUserEncoraStaff(userId: string): Promise<boolean> {
+export async function getPrivacySetting(userId: string): Promise<boolean> {
+  const db = await getDB();
+  if (!db) return false;
   try {
-    const data = await fs.readFile(badgesConfigPath, 'utf-8');
-    const parsed = JSON.parse(data);
-    const userBadges = parsed?.badges?.[userId] || [];
-    // Check if any badge has the tooltip "Encora Staff" (case insensitive)
-    return userBadges.some((b: any) => b.tooltip?.toLowerCase() === 'encora staff');
-  } catch {
-    return false;
+    const res = await db.query('SELECT hide_encora FROM encora_privacy WHERE user_id = $1 LIMIT 1', [userId]);
+    if (res.rows[0]) {
+      return !!res.rows[0].hide_encora;
+    }
+  } catch (err) {
+    console.error('[Encora Privacy Plugin] Failed to query privacy setting:', err);
+  }
+  return false;
+}
+
+export async function setPrivacySetting(userId: string, hideEncora: boolean): Promise<void> {
+  const db = await getDB();
+  if (!db) return;
+  try {
+    await db.query(`
+      INSERT INTO encora_privacy (user_id, hide_encora)
+      VALUES ($1, $2)
+      ON CONFLICT (user_id)
+      DO UPDATE SET hide_encora = EXCLUDED.hide_encora
+    `, [userId, hideEncora]);
+  } catch (err) {
+    console.error('[Encora Privacy Plugin] Failed to save privacy setting:', err);
   }
 }
 
 export default createRoute({
   prefix: '/v1',
   routes: (app) => {
-    // Load config on startup
-    void loadPrivacyConfig();
-
     // GET current user preference
     app.get('/encora-privacy', async (ctx) => {
       const user = ctx.get('user');
@@ -63,7 +62,8 @@ export default createRoute({
         return ctx.json({ error: 'Unauthorized' }, 401);
       }
       const userIdStr = String(user.id);
-      return ctx.json({ hideEncora: !!privacyMap[userIdStr] });
+      const hideEncora = await getPrivacySetting(userIdStr);
+      return ctx.json({ hideEncora });
     });
 
     // POST toggle preference
@@ -74,10 +74,9 @@ export default createRoute({
       }
       const body = await ctx.req.json();
       const userIdStr = String(user.id);
-      privacyMap[userIdStr] = !!body.hideEncora;
-      await savePrivacyConfig();
-      return ctx.json({ success: true, hideEncora: privacyMap[userIdStr] });
+      const hideEncora = !!body.hideEncora;
+      await setPrivacySetting(userIdStr, hideEncora);
+      return ctx.json({ success: true, hideEncora });
     });
   }
 });
-
