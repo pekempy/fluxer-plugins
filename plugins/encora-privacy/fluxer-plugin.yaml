@@ -12,5 +12,5 @@ targets:
 
   app:
     components:
-      - target: "features/user/components/modals/tabs/privacy_safety_tab/ProfilePrivacyTab"
-        wrapper: "./app/components/ProfilePrivacyTabWrapper.tsx"
+      - target: "features/ui/radio_group/RadioGroup"
+        wrapper: "./app/components/RadioGroupWrapper.tsx"
