@@ -46,13 +46,13 @@ async function isUserEncoraStaff(userId: string): Promise<boolean> {
 }
 
 export default createRoute({
-  prefix: '/v1/encora-privacy',
+  prefix: '/v1',
   routes: (app) => {
     // Load config on startup
     void loadPrivacyConfig();
 
     // GET current user preference
-    app.get('/', async (ctx) => {
+    app.get('/encora-privacy', async (ctx) => {
       const user = ctx.get('user');
       if (!user || !user.id) {
         return ctx.json({ error: 'Unauthorized' }, 401);
@@ -62,7 +62,7 @@ export default createRoute({
     });
 
     // POST toggle preference
-    app.post('/', async (ctx) => {
+    app.post('/encora-privacy', async (ctx) => {
       const user = ctx.get('user');
       if (!user || !user.id) {
         return ctx.json({ error: 'Unauthorized' }, 401);
