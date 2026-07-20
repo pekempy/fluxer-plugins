@@ -47,8 +47,10 @@ async function isUserEncoraStaff(userId: string): Promise<boolean> {
     const data = await fs.readFile(badgesConfigPath, 'utf-8');
     const parsed = JSON.parse(data);
     const userBadges = parsed?.badges?.[userId] || [];
+    console.log(`[EncoraPrivacyMiddleware] Badges for user ${userId}:`, JSON.stringify(userBadges));
     return userBadges.some((b: any) => b.tooltip?.toLowerCase() === 'encora staff');
-  } catch {
+  } catch (err: any) {
+    console.error(`[EncoraPrivacyMiddleware] Failed to read badges config from ${badgesConfigPath}:`, err.message || err);
     return false;
   }
 }
@@ -88,9 +90,15 @@ export default createMiddleware({
       return next();
     }
 
-    // Check if viewer has the Staff badge
-    const isStaff = currentUserIdStr ? await isUserEncoraStaff(currentUserIdStr) : false;
-    console.log(`[EncoraPrivacyMiddleware] Viewer is Staff: ${isStaff}`);
+    // Check if viewer has the core STAFF flag or custom staff badge
+    const isCoreStaff = currentUser && (
+      (typeof currentUser.isStaff === 'function' && currentUser.isStaff()) ||
+      (currentUser.flags !== undefined && (BigInt(currentUser.flags) & 1n) === 1n)
+    );
+    const isCustomStaff = currentUserIdStr ? await isUserEncoraStaff(currentUserIdStr) : false;
+    const isStaff = !!(isCoreStaff || isCustomStaff);
+    
+    console.log(`[EncoraPrivacyMiddleware] Viewer is Core Staff: ${!!isCoreStaff}, Custom Staff: ${isCustomStaff}`);
     if (isStaff) {
       console.log(`[EncoraPrivacyMiddleware] Viewer is Staff. Bypassing filter.`);
       return next();
