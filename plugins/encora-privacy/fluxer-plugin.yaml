@@ -8,7 +8,7 @@ targets:
   api:
     routes:
       - file: "./api/routes/EncoraPrivacyApi.ts"
-        prefix: "/"
+        prefix: "/encora-privacy"
 
   app:
     components:

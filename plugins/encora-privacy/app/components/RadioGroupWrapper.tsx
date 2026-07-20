@@ -3,7 +3,6 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { wrapComponent } from '@pekempy/fluxer-plugin-sdk/helpers/app';
 import { Switch } from '@app/features/ui/components/form/FormSwitch';
 import { SettingsTabSection } from '@app/features/app/components/dialogs/shared/SettingsTabLayout';
-import { Trans } from '@lingui/react/macro';
 
 const RadioGroupWrapper = ({ OriginalComponent, ...props }) => {
   const isProfilePrivacy = props['data-flx'] === 'user.privacy-safety-tab.profile-privacy-tab.radio-group.profile-privacy-change';
@@ -17,7 +16,7 @@ const RadioGroupWrapper = ({ OriginalComponent, ...props }) => {
     let active = true;
     async function fetchPrivacy() {
       try {
-        const res = await fetch('/v1/custom/encora-privacy');
+        const res = await fetch('/api/encora-privacy');
         if (res.ok && active) {
           const data = await res.json();
           setHideEncora(!!data.hideEncora);
@@ -37,7 +36,7 @@ const RadioGroupWrapper = ({ OriginalComponent, ...props }) => {
   const handleToggle = useCallback(async (value: boolean) => {
     setHideEncora(value);
     try {
-      const res = await fetch('/v1/custom/encora-privacy', {
+      const res = await fetch('/api/encora-privacy', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -65,11 +64,11 @@ const RadioGroupWrapper = ({ OriginalComponent, ...props }) => {
         <>
           <div style={{ height: '1.5rem' }} />
           <SettingsTabSection
-            title={<Trans>Encora connection privacy</Trans>}
+            title="Encora connection privacy"
             data-flx="user.privacy-safety-tab.encora-privacy.settings-tab-section"
           >
             <Switch
-              label={<Trans>Hide my Encora from other Prelude users</Trans>}
+              label="Hide my Encora from other Prelude users"
               value={hideEncora}
               onChange={handleToggle}
               data-flx="user.privacy-safety-tab.encora-privacy.switch"
