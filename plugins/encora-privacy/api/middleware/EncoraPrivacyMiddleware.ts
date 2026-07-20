@@ -79,8 +79,8 @@ export default createMiddleware({
       try {
         if (profileMatch) {
           const profile = await ctx.res.json();
-          if (profile && Array.isArray(profile.connections)) {
-            profile.connections = profile.connections.filter((conn: any) => {
+          if (profile && Array.isArray(profile.connected_accounts)) {
+            profile.connected_accounts = profile.connected_accounts.filter((conn: any) => {
               const name = String(conn.name || '').toLowerCase();
               return !name.includes('encora.it');
             });
