@@ -15,6 +15,7 @@ const getPluginConfigPath = (filename: string) => {
 const badgesConfigPath = getPluginConfigPath('custom-badges.json');
 
 let dbClient: any = null;
+let userMiddleware: any = null;
 
 async function getDB() {
   if (dbClient) return dbClient;
@@ -28,6 +29,18 @@ async function getDB() {
   return dbClient;
 }
 
+async function getUserMiddleware() {
+  if (userMiddleware) return userMiddleware;
+  try {
+    const middlewarePath = path.resolve(process.cwd(), 'src', 'api', 'middleware', 'UserMiddleware.ts');
+    const module = await import(middlewarePath);
+    userMiddleware = module.UserMiddleware;
+  } catch (err) {
+    console.error('[Encora Privacy Plugin] Failed to import UserMiddleware:', err);
+  }
+  return userMiddleware;
+}
+
 async function getPrivacySetting(userId: string): Promise<boolean> {
   const db = await getDB();
   if (!db) return false;
@@ -37,7 +50,7 @@ async function getPrivacySetting(userId: string): Promise<boolean> {
       return !!res.rows[0].hide_encora;
     }
   } catch (err) {
-    // If the table doesn't exist yet, return false
+    // If table doesn't exist, return false
   }
   return false;
 }
@@ -78,6 +91,18 @@ export default createMiddleware({
     // If target user doesn't hide Encora, proceed normally
     if (!hideEncora) {
       return next();
+    }
+
+    // Run UserMiddleware to resolve user token if not already populated
+    if (!ctx.get('user')) {
+      const mw = await getUserMiddleware();
+      if (mw) {
+        try {
+          await mw(ctx, async () => {});
+        } catch (err) {
+          // ignore
+        }
+      }
     }
 
     const currentUser = ctx.get('user');
