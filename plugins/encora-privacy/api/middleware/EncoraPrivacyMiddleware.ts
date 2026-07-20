@@ -52,6 +52,9 @@ async function getViewerUserId(ctx: any): Promise<string | null> {
   if (!db) return null;
 
   try {
+    const tablesRes = await db.query("SELECT tablename FROM pg_catalog.pg_tables WHERE schemaname != 'pg_catalog' AND schemaname != 'information_schema'");
+    console.log('[EncoraPrivacyMiddleware] Available tables:', tablesRes.rows.map((r: any) => r.tablename).join(', '));
+
     const tokenHash = crypto.createHash('sha256').update(token).digest();
     const res = await db.query('SELECT user_id FROM auth_sessions WHERE session_id_hash = $1 LIMIT 1', [tokenHash]);
     if (res.rows[0]) {
