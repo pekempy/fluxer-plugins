@@ -3,13 +3,18 @@ import { createRoute } from '@pekempy/fluxer-plugin-sdk/helpers/api';
 import { promises as fs } from 'fs';
 import path from 'path';
 
-const configPath = process.env.FLUXER_PLUGIN_CONFIG_DIR
-  ? path.join(process.env.FLUXER_PLUGIN_CONFIG_DIR, 'encora-privacy.json')
-  : path.resolve(process.cwd(), 'plugins', 'config', 'encora-privacy.json');
+const getPluginConfigPath = (filename: string) => {
+  if (process.env.FLUXER_PLUGIN_CONFIG_DIR) {
+    return path.join(process.env.FLUXER_PLUGIN_CONFIG_DIR, filename);
+  }
+  if (process.env.FLUXER_PLUGIN_DIR) {
+    return path.join(process.env.FLUXER_PLUGIN_DIR, 'config', filename);
+  }
+  return path.resolve(process.cwd(), 'plugins', 'config', filename);
+};
 
-const badgesConfigPath = process.env.FLUXER_PLUGIN_CONFIG_DIR
-  ? path.join(process.env.FLUXER_PLUGIN_CONFIG_DIR, 'custom-badges.json')
-  : path.resolve(process.cwd(), 'plugins', 'config', 'custom-badges.json');
+const configPath = getPluginConfigPath('encora-privacy.json');
+const badgesConfigPath = getPluginConfigPath('custom-badges.json');
 
 // Memory cache for privacy preferences
 let privacyMap: Record<string, boolean> = {};
