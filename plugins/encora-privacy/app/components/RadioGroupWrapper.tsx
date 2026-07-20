@@ -3,6 +3,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { wrapComponent } from '@pekempy/fluxer-plugin-sdk/helpers/app';
 import { Switch } from '@app/features/ui/components/form/FormSwitch';
 import { SettingsTabSection } from '@app/features/app/components/dialogs/shared/SettingsTabLayout';
+import { http } from '@app/features/platform/transport/RestTransport';
 
 const RadioGroupWrapper = ({ OriginalComponent, ...props }) => {
   const isProfilePrivacy = props['data-flx'] === 'user.privacy-safety-tab.profile-privacy-tab.radio-group.profile-privacy-change';
@@ -16,10 +17,9 @@ const RadioGroupWrapper = ({ OriginalComponent, ...props }) => {
     let active = true;
     async function fetchPrivacy() {
       try {
-        const res = await fetch('/api/v1/encora-privacy');
-        if (res.ok && active) {
-          const data = await res.json();
-          setHideEncora(!!data.hideEncora);
+        const res = await http.get('/encora-privacy');
+        if (res && active) {
+          setHideEncora(!!res.body?.hideEncora);
         }
       } catch (err) {
         console.error('[Encora Privacy Plugin] Failed to fetch privacy setting:', err);
@@ -36,17 +36,9 @@ const RadioGroupWrapper = ({ OriginalComponent, ...props }) => {
   const handleToggle = useCallback(async (value: boolean) => {
     setHideEncora(value);
     try {
-      const res = await fetch('/api/v1/encora-privacy', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ hideEncora: value })
+      await http.post('/encora-privacy', {
+        body: { hideEncora: value }
       });
-      if (!res.ok) {
-        // Revert on failure
-        setHideEncora(!value);
-      }
     } catch (err) {
       console.error('[Encora Privacy Plugin] Failed to save privacy setting:', err);
       setHideEncora(!value);
