@@ -20,7 +20,7 @@ let dbClient: any = null;
 async function getDB() {
   if (dbClient) return dbClient;
   try {
-    const clientPath = path.resolve(process.cwd(), 'node_modules', '@pkgs', 'postgres', 'src', 'Client.ts');
+    const clientPath = path.resolve(process.cwd(), 'node_modules', '@pkgs', 'postgres', 'src', 'Client.js');
     const { getDefaultPostgresClient } = await import(clientPath);
     dbClient = getDefaultPostgresClient();
   } catch (err) {
