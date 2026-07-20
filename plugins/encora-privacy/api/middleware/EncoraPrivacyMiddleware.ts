@@ -52,13 +52,27 @@ async function getViewerUserId(ctx: any): Promise<string | null> {
   if (!db) return null;
 
   try {
-    const sampleRes = await db.query("SELECT row_key, row_data FROM fluxer_kv WHERE table_name = 'auth_sessions' LIMIT 1");
-    console.log('[EncoraPrivacyMiddleware] Sample auth_session row_key:', JSON.stringify(sampleRes.rows[0]?.row_key), 'row_data:', JSON.stringify(sampleRes.rows[0]?.row_data));
-
     const tokenHash = crypto.createHash('sha256').update(token).digest();
-    const res = await db.query('SELECT user_id FROM auth_sessions WHERE session_id_hash = $1 LIMIT 1', [tokenHash]);
+    const base64Hash = tokenHash.toString('base64');
+    
+    // Match the exact JSON structure of row_key in fluxer_kv
+    const rowKeyObj = {
+      __fluxer_type: 'buffer',
+      value: base64Hash
+    };
+
+    const res = await db.query(
+      'SELECT row_data FROM fluxer_kv WHERE table_name = $1 AND row_key = $2 LIMIT 1',
+      ['auth_sessions', JSON.stringify(rowKeyObj)]
+    );
+
     if (res.rows[0]) {
-      return String(res.rows[0].user_id);
+      const rowData = typeof res.rows[0].row_data === 'string'
+        ? JSON.parse(res.rows[0].row_data)
+        : res.rows[0].row_data;
+      if (rowData && rowData.user_id && rowData.user_id.value) {
+        return String(rowData.user_id.value);
+      }
     }
   } catch (err) {
     console.error('[Encora Privacy Plugin] Failed to retrieve user ID from session:', err);
@@ -70,14 +84,28 @@ async function isCoreStaffUser(userId: string): Promise<boolean> {
   const db = await getDB();
   if (!db) return false;
   try {
+    const rowKeyObj = {
+      __fluxer_type: 'bigint',
+      value: userId
+    };
+
     const res = await db.query(
-      `SELECT row_data FROM "${db.kvTable()}" WHERE table_name = $1 AND row_key::jsonb ->> 'value' = $2 LIMIT 1`,
-      ['users', userId]
+      'SELECT row_data FROM fluxer_kv WHERE table_name = $1 AND row_key = $2 LIMIT 1',
+      ['users', JSON.stringify(rowKeyObj)]
     );
+
     if (res.rows[0]) {
       const userData = res.rows[0].row_data;
       const userObj = typeof userData === 'string' ? JSON.parse(userData) : userData;
-      const flags = BigInt(userObj.flags || 0);
+      
+      let flags = 0n;
+      if (userObj.flags) {
+        if (typeof userObj.flags === 'object' && userObj.flags.value !== undefined) {
+          flags = BigInt(userObj.flags.value);
+        } else {
+          flags = BigInt(userObj.flags);
+        }
+      }
       return (flags & 1n) === 1n; // 1n is typical STAFF flag value
     }
   } catch (err) {
