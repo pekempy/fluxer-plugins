@@ -1,0 +1,16 @@
+name: "encora-privacy"
+version: "1.0.0"
+description: "Allows users to hide their Encora connections and link badges from non-staff users."
+author: "pekempy"
+license: "MIT"
+
+targets:
+  api:
+    routes:
+      - file: "./api/routes/EncoraPrivacyApi.ts"
+        prefix: "/"
+
+  app:
+    components:
+      - target: "features/user/components/modals/tabs/privacy_safety_tab/DataExportTab"
+        wrapper: "./app/components/DataExportTabWrapper.tsx"
