@@ -16,7 +16,7 @@ const RadioGroupWrapper = ({ OriginalComponent, ...props }) => {
     let active = true;
     async function fetchPrivacy() {
       try {
-        const res = await fetch('/api/encora-privacy');
+        const res = await fetch('/api/v1/encora-privacy');
         if (res.ok && active) {
           const data = await res.json();
           setHideEncora(!!data.hideEncora);
@@ -36,7 +36,7 @@ const RadioGroupWrapper = ({ OriginalComponent, ...props }) => {
   const handleToggle = useCallback(async (value: boolean) => {
     setHideEncora(value);
     try {
-      const res = await fetch('/api/encora-privacy', {
+      const res = await fetch('/api/v1/encora-privacy', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'

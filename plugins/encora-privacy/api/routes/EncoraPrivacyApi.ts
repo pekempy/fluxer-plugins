@@ -46,7 +46,7 @@ async function isUserEncoraStaff(userId: string): Promise<boolean> {
 }
 
 export default createRoute({
-  prefix: '/encora-privacy',
+  prefix: '/v1/encora-privacy',
   routes: (app) => {
     // Load config on startup
     void loadPrivacyConfig();
