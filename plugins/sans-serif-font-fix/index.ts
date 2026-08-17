@@ -1,43 +1,41 @@
 import type { PluginLifecycle } from '@pekempy/fluxer-plugin-sdk';
 
-// Keep these in sync with the storage keys used by app/components/AppearanceTabWrapper.tsx.
-const CONFIG_KEY_ENABLED = 'fluxer:plugin:sans-serif-font-fix:config:enabled';
-const CONFIG_KEY_FONT = 'fluxer:plugin:sans-serif-font-fix:config:customFont';
-
 const FALLBACK_STACK =
   "'Fluxer Sans', 'Fluxer Sans Arabic', 'Fluxer Sans Hebrew', 'Fluxer Sans Devanagari', " +
   "'Fluxer Sans Thai Looped', 'Fluxer Sans SC', 'Fluxer Sans TC', 'Fluxer Sans JP', 'Fluxer Sans KR', " +
   "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif";
 
-function readJson(key: string): unknown {
-  const raw = localStorage.getItem(key);
-  if (!raw) return undefined;
-  try {
-    return JSON.parse(raw);
-  } catch {
-    return raw;
-  }
+function applyFont(customFont: string): void {
+  if (typeof document === 'undefined') return;
+  const trimmed = (customFont || '').trim();
+  const stack = trimmed ? `"${trimmed.replace(/"/g, '')}", ${FALLBACK_STACK}` : FALLBACK_STACK;
+  document.documentElement.style.setProperty('--font-sans', stack);
 }
 
-function applyStoredFontOverride(): void {
-  if (typeof document === 'undefined' || typeof localStorage === 'undefined') return;
-  const enabled = readJson(CONFIG_KEY_ENABLED) === true;
-  const customFont = readJson(CONFIG_KEY_FONT);
-  if (!enabled || typeof customFont !== 'string') return;
-  const trimmed = customFont.trim();
-  if (!trimmed) return;
-  const stack = `"${trimmed.replace(/"/g, '')}", ${FALLBACK_STACK}`;
-  document.documentElement.style.setProperty('--font-sans', stack);
+async function applyServerFontOverride(): Promise<void> {
+  if (typeof fetch === 'undefined') return;
+  try {
+    const res = await fetch('/v1/custom-font', { credentials: 'include' });
+    if (!res.ok) return; // e.g. 401 before login - nothing to apply yet
+    const data = await res.json();
+    if (data?.enabled && typeof data.fontFamily === 'string' && data.fontFamily.trim()) {
+      applyFont(data.fontFamily);
+    }
+  } catch {
+    // Not logged in yet, or the API isn't reachable at boot - not fatal,
+    // the settings page will re-fetch and re-apply once opened.
+  }
 }
 
 const plugin: PluginLifecycle = {
   init(context) {
     try {
-      // The bundled stylesheet (app/styles/sans-serif-fix.css) already forces the
-      // default sans-serif stack unconditionally. Here we only need to re-apply
-      // a user-configured custom font as early as possible on boot, so it's in
-      // place before the settings dialog is even opened.
-      applyStoredFontOverride();
+      // The bundled stylesheet (app/styles/sans-serif-fix.css) already forces
+      // the default sans-serif stack unconditionally. Here we asynchronously
+      // fetch the signed-in user's saved custom font (stored server-side, not
+      // in localStorage - some browsers/profiles disable Storage APIs
+      // entirely) and re-apply it as early as possible on boot.
+      void applyServerFontOverride();
       context.logger.info('Sans-serif font fix initialized.');
     } catch (err) {
       context.logger.error('Failed to apply stored custom font on init:', err);

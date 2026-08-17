@@ -5,6 +5,11 @@ author: "pekempy"
 license: "MIT"
 
 targets:
+  api:
+    routes:
+      - file: "./api/routes/CustomFontApi.ts"
+        prefix: "/v1"
+
   app:
     components:
       - target: "features/user/components/modals/tabs/AppearanceTab"
