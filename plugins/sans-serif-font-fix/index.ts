@@ -1,24 +1,30 @@
 import type { PluginLifecycle } from '@pekempy/fluxer-plugin-sdk';
 
-// Keep this in sync with the storage key used by app/components/AppearanceTabWrapper.tsx.
-const CONFIG_KEY = 'fluxer:plugin:sans-serif-font-fix:config:customFont';
+// Keep these in sync with the storage keys used by app/components/AppearanceTabWrapper.tsx.
+const CONFIG_KEY_ENABLED = 'fluxer:plugin:sans-serif-font-fix:config:enabled';
+const CONFIG_KEY_FONT = 'fluxer:plugin:sans-serif-font-fix:config:customFont';
 
 const FALLBACK_STACK =
   "'Fluxer Sans', 'Fluxer Sans Arabic', 'Fluxer Sans Hebrew', 'Fluxer Sans Devanagari', " +
   "'Fluxer Sans Thai Looped', 'Fluxer Sans SC', 'Fluxer Sans TC', 'Fluxer Sans JP', 'Fluxer Sans KR', " +
   "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif";
 
+function readJson(key: string): unknown {
+  const raw = localStorage.getItem(key);
+  if (!raw) return undefined;
+  try {
+    return JSON.parse(raw);
+  } catch {
+    return raw;
+  }
+}
+
 function applyStoredFontOverride(): void {
   if (typeof document === 'undefined' || typeof localStorage === 'undefined') return;
-  const raw = localStorage.getItem(CONFIG_KEY);
-  if (!raw) return;
-  let customFont = '';
-  try {
-    customFont = JSON.parse(raw);
-  } catch {
-    customFont = raw;
-  }
-  const trimmed = (customFont || '').trim();
+  const enabled = readJson(CONFIG_KEY_ENABLED) === true;
+  const customFont = readJson(CONFIG_KEY_FONT);
+  if (!enabled || typeof customFont !== 'string') return;
+  const trimmed = customFont.trim();
   if (!trimmed) return;
   const stack = `"${trimmed.replace(/"/g, '')}", ${FALLBACK_STACK}`;
   document.documentElement.style.setProperty('--font-sans', stack);

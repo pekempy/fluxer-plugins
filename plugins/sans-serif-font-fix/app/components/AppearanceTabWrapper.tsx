@@ -4,11 +4,12 @@ import { wrapComponent } from '@pekempy/fluxer-plugin-sdk/helpers/app';
 import { SettingsSection } from '@app/features/app/components/dialogs/shared/SettingsSection';
 import { SettingsHeadingLinkButton } from '@app/features/app/components/dialogs/shared/SettingsHeadingLinkButton';
 import { Switch } from '@app/features/ui/components/form/FormSwitch';
-import { Combobox } from '@app/features/ui/components/form/FormCombobox';
+import { Input } from '@app/features/ui/components/form/FormInput';
 import { APP_PROTOCOL_PREFIX } from '@app/features/ui/utils/AppProtocol';
 
-// Keep this in sync with the storage key used by index.ts.
-const CONFIG_KEY = 'fluxer:plugin:sans-serif-font-fix:config:customFont';
+// Keep these in sync with the storage keys used by index.ts.
+const CONFIG_KEY_ENABLED = 'fluxer:plugin:sans-serif-font-fix:config:enabled';
+const CONFIG_KEY_FONT = 'fluxer:plugin:sans-serif-font-fix:config:customFont';
 
 const FALLBACK_STACK =
   "'Fluxer Sans', 'Fluxer Sans Arabic', 'Fluxer Sans Hebrew', 'Fluxer Sans Devanagari', " +
@@ -16,26 +17,22 @@ const FALLBACK_STACK =
   "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif";
 
 // A curated list of fonts that are commonly available on desktop/mobile OSes
-// without needing to bundle or fetch anything extra. Users can still type
-// any other font name and it'll be used verbatim (with the same sans-serif
-// fallback chain appended for safety).
-const FONT_OPTIONS = [
-  { value: 'Fluxer Sans', label: 'Fluxer Sans (default)' },
-  { value: 'Inter', label: 'Inter' },
-  { value: 'Arial', label: 'Arial' },
-  { value: 'Helvetica', label: 'Helvetica' },
-  { value: 'Verdana', label: 'Verdana' },
-  { value: 'Tahoma', label: 'Tahoma' },
-  { value: 'Trebuchet MS', label: 'Trebuchet MS' },
-  { value: 'Segoe UI', label: 'Segoe UI' },
-  { value: 'Roboto', label: 'Roboto' },
-  { value: 'Open Sans', label: 'Open Sans' },
-  { value: 'Georgia', label: 'Georgia (serif)' },
-  { value: 'Times New Roman', label: 'Times New Roman (serif)' },
-  { value: 'Garamond', label: 'Garamond (serif)' },
-  { value: 'Courier New', label: 'Courier New (monospace)' },
-  { value: 'Consolas', label: 'Consolas (monospace)' },
-  { value: 'Comic Sans MS', label: 'Comic Sans MS' },
+// without needing to bundle or fetch anything extra. Clicking a chip fills
+// and commits the field immediately; you can still type any other font name
+// by hand and it commits on every keystroke, same as the presets.
+const FONT_PRESETS = [
+  'Fluxer Sans',
+  'Inter',
+  'Arial',
+  'Helvetica',
+  'Verdana',
+  'Segoe UI',
+  'Roboto',
+  'Open Sans',
+  'Georgia',
+  'Times New Roman',
+  'Courier New',
+  'Comic Sans MS',
 ];
 
 function applyFont(customFont: string) {
@@ -45,43 +42,26 @@ function applyFont(customFont: string) {
   document.documentElement.style.setProperty('--font-sans', stack);
 }
 
-function readStoredFont(): string {
+function readJson(key: string) {
   try {
-    const raw = localStorage.getItem(CONFIG_KEY);
-    if (!raw) return '';
+    const raw = localStorage.getItem(key);
+    if (!raw) return undefined;
     try {
-      return JSON.parse(raw) || '';
+      return JSON.parse(raw);
     } catch {
       return raw;
     }
   } catch {
-    return '';
+    return undefined;
   }
 }
 
-function persistFont(value: string) {
+function writeJson(key: string, value: unknown) {
   try {
-    if (value) {
-      localStorage.setItem(CONFIG_KEY, JSON.stringify(value));
-    } else {
-      localStorage.removeItem(CONFIG_KEY);
-    }
+    localStorage.setItem(key, JSON.stringify(value));
   } catch (err) {
-    console.error('[sans-serif-font-fix] Failed to persist custom font:', err);
+    console.error('[sans-serif-font-fix] Failed to persist setting:', key, err);
   }
-}
-
-// If the typed text exactly matches a known option (by name), snap to it so
-// the dropdown shows it as "selected". Otherwise pass the raw typed value
-// straight through, so any custom system font name still works.
-function resolveFontInput(inputValue: string, options: ReadonlyArray<{ value: string; label: string }>) {
-  const trimmed = inputValue.trim();
-  if (!trimmed) return undefined;
-  const lowered = trimmed.toLowerCase();
-  const match = options.find(
-    (option) => option.value.toLowerCase() === lowered || option.label.toLowerCase() === lowered,
-  );
-  return match ? match.value : trimmed;
 }
 
 const AppearanceTabWrapper = ({ OriginalComponent, ...props }) => {
@@ -89,39 +69,43 @@ const AppearanceTabWrapper = ({ OriginalComponent, ...props }) => {
   const [enabled, setEnabled] = useState(false);
   const [loaded, setLoaded] = useState(false);
 
+  // Load persisted state once on mount. `enabled` and `customFont` are two
+  // independent keys - enabling the switch is saved immediately regardless
+  // of whether a font has been typed yet, so a refresh never silently
+  // reverts the toggle.
   useEffect(() => {
-    const stored = readStoredFont();
-    if (stored) {
-      setCustomFont(stored);
-      setEnabled(true);
-      applyFont(stored);
-    }
+    const storedEnabled = readJson(CONFIG_KEY_ENABLED) === true;
+    const storedFont = readJson(CONFIG_KEY_FONT);
+    const font = typeof storedFont === 'string' ? storedFont : '';
+    setEnabled(storedEnabled);
+    setCustomFont(font);
+    if (storedEnabled && font) applyFont(font);
     setLoaded(true);
   }, []);
 
   const handleToggle = useCallback(
     (value: boolean) => {
       setEnabled(value);
-      if (value) {
-        applyFont(customFont);
-        persistFont(customFont);
-      } else {
-        applyFont('');
-        persistFont('');
-      }
+      writeJson(CONFIG_KEY_ENABLED, value);
+      applyFont(value ? customFont : '');
     },
     [customFont],
   );
 
-  const handleFontChange = useCallback(
+  // Commits on every keystroke (not just blur/selection) so nothing is lost
+  // if the tab is closed or refreshed mid-edit.
+  const commitFont = useCallback(
     (value: string) => {
       setCustomFont(value);
-      if (enabled) {
-        applyFont(value);
-        persistFont(value);
-      }
+      writeJson(CONFIG_KEY_FONT, value);
+      if (enabled) applyFont(value);
     },
     [enabled],
+  );
+
+  const handleInputChange = useCallback(
+    (event: React.ChangeEvent<HTMLInputElement>) => commitFont(event.target.value),
+    [commitFont],
   );
 
   const sectionLinkHref = useMemo(
@@ -153,21 +137,41 @@ const AppearanceTabWrapper = ({ OriginalComponent, ...props }) => {
             data-flx="user.appearance-tab.custom-font.switch"
           />
           {enabled && (
-            <div style={{ marginTop: '12px', maxWidth: '360px' }}>
-              <Combobox
+            <div style={{ marginTop: '12px', maxWidth: '420px' }}>
+              <Input
                 label="Font family"
-                placeholder="Search or type any font name…"
+                placeholder="e.g. Inter, Arial, Comic Sans MS"
                 value={customFont}
-                options={FONT_OPTIONS}
-                onChange={handleFontChange}
-                isSearchable
-                isClearable
-                autoSelectValueFromInput={resolveFontInput}
-                renderOption={(option) => (
-                  <span style={{ fontFamily: `"${option.value}", sans-serif` }}>{option.label}</span>
-                )}
-                data-flx="user.appearance-tab.custom-font.combobox"
+                onChange={handleInputChange}
+                data-flx="user.appearance-tab.custom-font.input"
               />
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '10px' }}>
+                {FONT_PRESETS.map((preset) => (
+                  <button
+                    key={preset}
+                    type="button"
+                    onClick={() => commitFont(preset)}
+                    data-flx="user.appearance-tab.custom-font.preset-chip"
+                    style={{
+                      fontFamily: `"${preset}", sans-serif`,
+                      padding: '6px 10px',
+                      borderRadius: '999px',
+                      border:
+                        customFont === preset
+                          ? '1px solid var(--brand-500, #5865f2)'
+                          : '1px solid var(--border-primary, rgba(255,255,255,0.15))',
+                      background:
+                        customFont === preset ? 'var(--brand-500, #5865f2)' : 'var(--surface-secondary, transparent)',
+                      color: customFont === preset ? '#fff' : 'var(--text-primary, inherit)',
+                      cursor: 'pointer',
+                      fontSize: '13px',
+                      lineHeight: '1.2',
+                    }}
+                  >
+                    {preset}
+                  </button>
+                ))}
+              </div>
             </div>
           )}
         </SettingsSection>
