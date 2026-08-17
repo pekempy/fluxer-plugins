@@ -1,0 +1,21 @@
+{
+  "name": "sans-serif-font-fix",
+  "version": "1.0.0",
+  "description": "Forces Fluxer back to a sans-serif font and lets users set a custom system font in Settings > Appearance",
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@pekempy/fluxer-plugin-sdk": "link:../../sdk"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.4",
+    "@types/react": "^19.0.0",
+    "typescript": "^5.8.3"
+  },
+  "peerDependencies": {
+    "react": "^19.2.4"
+  }
+}

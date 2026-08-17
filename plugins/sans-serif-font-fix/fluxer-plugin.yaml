@@ -1,0 +1,13 @@
+name: "sans-serif-font-fix"
+version: "1.0.0"
+description: "Forces the interface back to a sans-serif font (in case the app falls back to a serif default) and adds a Settings > Appearance > Interface option to use your own custom system font."
+author: "pekempy"
+license: "MIT"
+
+targets:
+  app:
+    components:
+      - target: "features/user/components/modals/tabs/AppearanceTab"
+        wrapper: "./app/components/AppearanceTabWrapper.tsx"
+    styles:
+      - file: "./app/styles/sans-serif-fix.css"

@@ -1,0 +1,30 @@
+/*
+ * Forces the interface back to a sans-serif font stack.
+ *
+ * The app resolves its body font via `font-family: var(--font-sans)` (see
+ * fluxer_app/src/app/globals.css), and --font-sans itself is populated at
+ * runtime ("source": "runtime-fonts" in ThemeVariableManifest.ts) rather than
+ * being a static CSS default. If that runtime step ever fails to run (or is
+ * changed upstream), `var(--font-sans)` resolves to nothing and the browser
+ * falls back to its UA-default font-family, which is serif on every major
+ * browser. This stylesheet re-declares the variable unconditionally so the
+ * app is always sans-serif regardless of whether the runtime step succeeds.
+ */
+
+:root {
+	--font-sans:
+		'Fluxer Sans', 'Fluxer Sans Arabic', 'Fluxer Sans Hebrew', 'Fluxer Sans Devanagari', 'Fluxer Sans Thai Looped',
+		'Fluxer Sans SC', 'Fluxer Sans TC', 'Fluxer Sans JP', 'Fluxer Sans KR', system-ui, -apple-system,
+		BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif !important;
+	--font-keybind: -apple-system, BlinkMacSystemFont, var(--font-sans) !important;
+}
+
+/* Belt-and-braces: guarantee sans-serif rendering even if --font-sans itself
+   never gets defined at all (an undefined custom property falls back to the
+   font-family property's UA-default initial value, typically a serif font). */
+html,
+body {
+	font-family:
+		'Fluxer Sans', 'Fluxer Sans Arabic', 'Fluxer Sans Hebrew', system-ui, -apple-system, BlinkMacSystemFont,
+		'Segoe UI', 'Roboto', sans-serif !important;
+}
