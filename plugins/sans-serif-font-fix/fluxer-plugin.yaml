@@ -14,5 +14,7 @@ targets:
     components:
       - target: "features/user/components/modals/tabs/AppearanceTab"
         wrapper: "./app/components/AppearanceTabWrapper.tsx"
+      - target: "features/app/components/layout/AppLayout"
+        wrapper: "./app/components/AppLayoutFontLoader.tsx"
     styles:
       - file: "./app/styles/sans-serif-fix.css"
