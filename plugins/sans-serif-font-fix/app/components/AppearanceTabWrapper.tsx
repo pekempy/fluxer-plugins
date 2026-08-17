@@ -1,9 +1,11 @@
 // @ts-nocheck
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { wrapComponent } from '@pekempy/fluxer-plugin-sdk/helpers/app';
 import { SettingsSection } from '@app/features/app/components/dialogs/shared/SettingsSection';
+import { SettingsHeadingLinkButton } from '@app/features/app/components/dialogs/shared/SettingsHeadingLinkButton';
 import { Switch } from '@app/features/ui/components/form/FormSwitch';
-import { Input } from '@app/features/ui/components/form/FormInput';
+import { Combobox } from '@app/features/ui/components/form/FormCombobox';
+import { APP_PROTOCOL_PREFIX } from '@app/features/ui/utils/AppProtocol';
 
 // Keep this in sync with the storage key used by index.ts.
 const CONFIG_KEY = 'fluxer:plugin:sans-serif-font-fix:config:customFont';
@@ -12,6 +14,29 @@ const FALLBACK_STACK =
   "'Fluxer Sans', 'Fluxer Sans Arabic', 'Fluxer Sans Hebrew', 'Fluxer Sans Devanagari', " +
   "'Fluxer Sans Thai Looped', 'Fluxer Sans SC', 'Fluxer Sans TC', 'Fluxer Sans JP', 'Fluxer Sans KR', " +
   "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif";
+
+// A curated list of fonts that are commonly available on desktop/mobile OSes
+// without needing to bundle or fetch anything extra. Users can still type
+// any other font name and it'll be used verbatim (with the same sans-serif
+// fallback chain appended for safety).
+const FONT_OPTIONS = [
+  { value: 'Fluxer Sans', label: 'Fluxer Sans (default)' },
+  { value: 'Inter', label: 'Inter' },
+  { value: 'Arial', label: 'Arial' },
+  { value: 'Helvetica', label: 'Helvetica' },
+  { value: 'Verdana', label: 'Verdana' },
+  { value: 'Tahoma', label: 'Tahoma' },
+  { value: 'Trebuchet MS', label: 'Trebuchet MS' },
+  { value: 'Segoe UI', label: 'Segoe UI' },
+  { value: 'Roboto', label: 'Roboto' },
+  { value: 'Open Sans', label: 'Open Sans' },
+  { value: 'Georgia', label: 'Georgia (serif)' },
+  { value: 'Times New Roman', label: 'Times New Roman (serif)' },
+  { value: 'Garamond', label: 'Garamond (serif)' },
+  { value: 'Courier New', label: 'Courier New (monospace)' },
+  { value: 'Consolas', label: 'Consolas (monospace)' },
+  { value: 'Comic Sans MS', label: 'Comic Sans MS' },
+];
 
 function applyFont(customFont: string) {
   if (typeof document === 'undefined') return;
@@ -46,6 +71,19 @@ function persistFont(value: string) {
   }
 }
 
+// If the typed text exactly matches a known option (by name), snap to it so
+// the dropdown shows it as "selected". Otherwise pass the raw typed value
+// straight through, so any custom system font name still works.
+function resolveFontInput(inputValue: string, options: ReadonlyArray<{ value: string; label: string }>) {
+  const trimmed = inputValue.trim();
+  if (!trimmed) return undefined;
+  const lowered = trimmed.toLowerCase();
+  const match = options.find(
+    (option) => option.value.toLowerCase() === lowered || option.label.toLowerCase() === lowered,
+  );
+  return match ? match.value : trimmed;
+}
+
 const AppearanceTabWrapper = ({ OriginalComponent, ...props }) => {
   const [customFont, setCustomFont] = useState('');
   const [enabled, setEnabled] = useState(false);
@@ -76,8 +114,7 @@ const AppearanceTabWrapper = ({ OriginalComponent, ...props }) => {
   );
 
   const handleFontChange = useCallback(
-    (event: React.ChangeEvent<HTMLInputElement>) => {
-      const value = event.target.value;
+    (value: string) => {
       setCustomFont(value);
       if (enabled) {
         applyFont(value);
@@ -87,6 +124,11 @@ const AppearanceTabWrapper = ({ OriginalComponent, ...props }) => {
     [enabled],
   );
 
+  const sectionLinkHref = useMemo(
+    () => `${APP_PROTOCOL_PREFIX}settings/user?${new URLSearchParams({ tab: 'appearance', section: 'custom-font' }).toString()}`,
+    [],
+  );
+
   return (
     <>
       <OriginalComponent {...props} />
@@ -94,8 +136,14 @@ const AppearanceTabWrapper = ({ OriginalComponent, ...props }) => {
         <SettingsSection
           id="custom-font"
           title="Custom Font"
-          description="Fluxer always falls back to a sans-serif system font by default. Turn this on to use your own font everywhere in the app instead."
+          description="Fluxer always falls back to a sans-serif system font by default. Turn this on to pick your own font instead."
           linkable={false}
+          actions={
+            <SettingsHeadingLinkButton
+              href={sectionLinkHref}
+              data-flx="user.appearance-tab.custom-font.settings-heading-link-button"
+            />
+          }
           data-flx="user.appearance-tab.custom-font.settings-section"
         >
           <Switch
@@ -106,12 +154,19 @@ const AppearanceTabWrapper = ({ OriginalComponent, ...props }) => {
           />
           {enabled && (
             <div style={{ marginTop: '12px', maxWidth: '360px' }}>
-              <Input
+              <Combobox
                 label="Font family"
-                placeholder="e.g. Inter, Arial, Comic Sans MS"
+                placeholder="Search or type any font name…"
                 value={customFont}
+                options={FONT_OPTIONS}
                 onChange={handleFontChange}
-                data-flx="user.appearance-tab.custom-font.input"
+                isSearchable
+                isClearable
+                autoSelectValueFromInput={resolveFontInput}
+                renderOption={(option) => (
+                  <span style={{ fontFamily: `"${option.value}", sans-serif` }}>{option.label}</span>
+                )}
+                data-flx="user.appearance-tab.custom-font.combobox"
               />
             </div>
           )}
