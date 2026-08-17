@@ -6,12 +6,16 @@ import { SettingsHeadingLinkButton } from '@app/features/app/components/dialogs/
 import { Switch } from '@app/features/ui/components/form/FormSwitch';
 import { Combobox } from '@app/features/ui/components/form/FormCombobox';
 import { APP_PROTOCOL_PREFIX } from '@app/features/ui/utils/AppProtocol';
+import { http } from '@app/features/platform/transport/RestTransport';
 
-// The app is only reverse-proxied to the API service under /api/* (see
-// deploy/self-hosting/Caddyfile) - everything else falls through to the SPA's
-// static file server. RestTransport.ts builds its own calls as
-// `/api` + `/v{version}` + path, so we mirror that exactly here.
-const API_PATH = '/api/v1/custom-font';
+// Using the app's own `http` client (not raw fetch) matters for two reasons:
+// 1. It automatically prefixes requests with /api/v1 - the reverse proxy only
+//    forwards /api/* to the actual API service (see deploy/self-hosting/Caddyfile),
+//    everything else falls through to the SPA's static file server.
+// 2. This app authenticates via a bearer token attached by RestTransport's
+//    installAuth() (see src/app/SetupHttp.ts), not cookies - so a plain
+//    fetch(), even with credentials:'include', has no way to authenticate.
+const API_PATH = '/custom-font';
 
 const FALLBACK_STACK =
   "'Fluxer Sans', 'Fluxer Sans Arabic', 'Fluxer Sans Hebrew', 'Fluxer Sans Devanagari', " +
@@ -46,9 +50,9 @@ function applyFont(customFont: string) {
 
 async function fetchSetting(): Promise<{ enabled: boolean; fontFamily: string } | null> {
   try {
-    const res = await fetch(API_PATH, { credentials: 'include' });
-    if (!res.ok) return null;
-    const data = await res.json();
+    const res = await http.get(API_PATH);
+    const data = res?.body;
+    if (!data) return null;
     return { enabled: !!data.enabled, fontFamily: typeof data.fontFamily === 'string' ? data.fontFamily : '' };
   } catch (err) {
     console.error('[sans-serif-font-fix] Failed to load custom font setting:', err);
@@ -58,15 +62,7 @@ async function fetchSetting(): Promise<{ enabled: boolean; fontFamily: string } 
 
 async function saveSetting(enabled: boolean, fontFamily: string): Promise<void> {
   try {
-    const res = await fetch(API_PATH, {
-      method: 'POST',
-      credentials: 'include',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ enabled, fontFamily }),
-    });
-    if (!res.ok) {
-      console.error('[sans-serif-font-fix] Failed to save custom font setting: HTTP', res.status);
-    }
+    await http.post(API_PATH, { body: { enabled, fontFamily } });
   } catch (err) {
     console.error('[sans-serif-font-fix] Failed to save custom font setting:', err);
   }

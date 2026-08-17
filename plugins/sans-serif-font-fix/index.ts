@@ -1,47 +1,24 @@
 import type { PluginLifecycle } from '@pekempy/fluxer-plugin-sdk';
 
-const FALLBACK_STACK =
-  "'Fluxer Sans', 'Fluxer Sans Arabic', 'Fluxer Sans Hebrew', 'Fluxer Sans Devanagari', " +
-  "'Fluxer Sans Thai Looped', 'Fluxer Sans SC', 'Fluxer Sans TC', 'Fluxer Sans JP', 'Fluxer Sans KR', " +
-  "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif";
-
-function applyFont(customFont: string): void {
-  if (typeof document === 'undefined') return;
-  const trimmed = (customFont || '').trim();
-  const stack = trimmed ? `"${trimmed.replace(/"/g, '')}", ${FALLBACK_STACK}` : FALLBACK_STACK;
-  document.documentElement.style.setProperty('--font-sans', stack);
-}
-
-async function applyServerFontOverride(): Promise<void> {
-  if (typeof fetch === 'undefined') return;
-  try {
-    // Must go through /api/* - that's the only prefix the reverse proxy
-    // forwards to the actual API service (see deploy/self-hosting/Caddyfile).
-    const res = await fetch('/api/v1/custom-font', { credentials: 'include' });
-    if (!res.ok) return; // e.g. 401 before login - nothing to apply yet
-    const data = await res.json();
-    if (data?.enabled && typeof data.fontFamily === 'string' && data.fontFamily.trim()) {
-      applyFont(data.fontFamily);
-    }
-  } catch {
-    // Not logged in yet, or the API isn't reachable at boot - not fatal,
-    // the settings page will re-fetch and re-apply once opened.
-  }
-}
-
 const plugin: PluginLifecycle = {
   init(context) {
-    try {
-      // The bundled stylesheet (app/styles/sans-serif-fix.css) already forces
-      // the default sans-serif stack unconditionally. Here we asynchronously
-      // fetch the signed-in user's saved custom font (stored server-side, not
-      // in localStorage - some browsers/profiles disable Storage APIs
-      // entirely) and re-apply it as early as possible on boot.
-      void applyServerFontOverride();
-      context.logger.info('Sans-serif font fix initialized.');
-    } catch (err) {
-      context.logger.error('Failed to apply stored custom font on init:', err);
-    }
+    // The bundled stylesheet (app/styles/sans-serif-fix.css) forces the
+    // default sans-serif stack unconditionally at every page load - that
+    // covers the original "falls back to serif" bug for every user, signed
+    // in or not.
+    //
+    // A signed-in user's saved custom font (stored server-side via
+    // /v1/custom-font, see api/routes/CustomFontApi.ts) is fetched and
+    // applied by AppearanceTabWrapper.tsx as soon as Settings > Appearance
+    // mounts. It's deliberately NOT re-fetched here at plugin boot: doing so
+    // would need this app's `http` client (for the /api/v1 prefix and the
+    // bearer-token auth header it attaches - this app doesn't use cookies),
+    // which lives under the @app/* alias that only resolves inside the
+    // rspack-bundled app/ tree. This file is compiled by plain tsc as a
+    // standalone Node/ESM module with no such path mapping available (the
+    // fluxer and fluxer-plugins repos aren't guaranteed to share a
+    // filesystem layout), so it has no way to attach that token.
+    context.logger.info('Sans-serif font fix initialized.');
   },
   shutdown(context) {
     context.logger.info('Sans-serif font fix shutdown.');
