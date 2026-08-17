@@ -23,6 +23,7 @@ const FALLBACK_STACK =
   "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif";
 
 const FONT_OPTIONS = [
+  // Sans-serif
   { value: 'Fluxer Sans', label: 'Fluxer Sans (default)' },
   { value: 'Inter', label: 'Inter' },
   { value: 'Arial', label: 'Arial' },
@@ -33,12 +34,47 @@ const FONT_OPTIONS = [
   { value: 'Segoe UI', label: 'Segoe UI' },
   { value: 'Roboto', label: 'Roboto' },
   { value: 'Open Sans', label: 'Open Sans' },
+  { value: 'Calibri', label: 'Calibri' },
+  { value: 'Candara', label: 'Candara' },
+  { value: 'Corbel', label: 'Corbel' },
+  { value: 'Century Gothic', label: 'Century Gothic' },
+  { value: 'Franklin Gothic Medium', label: 'Franklin Gothic Medium' },
+  { value: 'Lucida Sans Unicode', label: 'Lucida Sans Unicode' },
+  { value: 'Noto Sans', label: 'Noto Sans' },
+  { value: 'Ubuntu', label: 'Ubuntu' },
+  { value: 'Arial Narrow', label: 'Arial Narrow' },
+  { value: 'Geneva', label: 'Geneva' },
+  // Serif
   { value: 'Georgia', label: 'Georgia (serif)' },
   { value: 'Times New Roman', label: 'Times New Roman (serif)' },
   { value: 'Garamond', label: 'Garamond (serif)' },
+  { value: 'Cambria', label: 'Cambria (serif)' },
+  { value: 'Book Antiqua', label: 'Book Antiqua (serif)' },
+  { value: 'Palatino Linotype', label: 'Palatino Linotype (serif)' },
+  { value: 'Bookman Old Style', label: 'Bookman Old Style (serif)' },
+  { value: 'Constantia', label: 'Constantia (serif)' },
+  { value: 'Rockwell', label: 'Rockwell (serif)' },
+  { value: 'Baskerville', label: 'Baskerville (serif)' },
+  { value: 'Didot', label: 'Didot (serif)' },
+  { value: 'Goudy Old Style', label: 'Goudy Old Style (serif)' },
+  // Monospace
   { value: 'Courier New', label: 'Courier New (monospace)' },
   { value: 'Consolas', label: 'Consolas (monospace)' },
+  { value: 'Menlo', label: 'Menlo (monospace)' },
+  { value: 'Monaco', label: 'Monaco (monospace)' },
+  { value: 'Lucida Console', label: 'Lucida Console (monospace)' },
+  { value: 'Source Code Pro', label: 'Source Code Pro (monospace)' },
+  { value: 'Fira Code', label: 'Fira Code (monospace)' },
+  { value: 'Cascadia Code', label: 'Cascadia Code (monospace)' },
+  // Display / decorative / handwriting
   { value: 'Comic Sans MS', label: 'Comic Sans MS' },
+  { value: 'Impact', label: 'Impact' },
+  { value: 'Papyrus', label: 'Papyrus' },
+  { value: 'Brush Script MT', label: 'Brush Script MT' },
+  { value: 'Copperplate', label: 'Copperplate' },
+  { value: 'Chalkboard', label: 'Chalkboard' },
+  { value: 'Marker Felt', label: 'Marker Felt' },
+  { value: 'Bradley Hand', label: 'Bradley Hand' },
 ];
 
 function applyFont(customFont: string) {
