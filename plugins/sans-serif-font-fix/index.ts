@@ -15,7 +15,9 @@ function applyFont(customFont: string): void {
 async function applyServerFontOverride(): Promise<void> {
   if (typeof fetch === 'undefined') return;
   try {
-    const res = await fetch('/v1/custom-font', { credentials: 'include' });
+    // Must go through /api/* - that's the only prefix the reverse proxy
+    // forwards to the actual API service (see deploy/self-hosting/Caddyfile).
+    const res = await fetch('/api/v1/custom-font', { credentials: 'include' });
     if (!res.ok) return; // e.g. 401 before login - nothing to apply yet
     const data = await res.json();
     if (data?.enabled && typeof data.fontFamily === 'string' && data.fontFamily.trim()) {

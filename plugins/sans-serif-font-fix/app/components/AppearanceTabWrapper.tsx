@@ -7,7 +7,11 @@ import { Switch } from '@app/features/ui/components/form/FormSwitch';
 import { Combobox } from '@app/features/ui/components/form/FormCombobox';
 import { APP_PROTOCOL_PREFIX } from '@app/features/ui/utils/AppProtocol';
 
-const API_PATH = '/v1/custom-font';
+// The app is only reverse-proxied to the API service under /api/* (see
+// deploy/self-hosting/Caddyfile) - everything else falls through to the SPA's
+// static file server. RestTransport.ts builds its own calls as
+// `/api` + `/v{version}` + path, so we mirror that exactly here.
+const API_PATH = '/api/v1/custom-font';
 
 const FALLBACK_STACK =
   "'Fluxer Sans', 'Fluxer Sans Arabic', 'Fluxer Sans Hebrew', 'Fluxer Sans Devanagari', " +
