@@ -33,6 +33,14 @@ async function main(): Promise<void> {
   initializeConfig(Config);
   initializeLogger(Logger);
 
+  // --- DEBUGGING ADDITION ---
+  Logger.info({
+    natsUrl: (Config as any).nats?.jetStreamUrl,
+    testMode: (Config as any).dev?.testModeEnabled,
+    nodeEnv: (Config as any).nodeEnv
+  }, '[Loader] Debugging configuration before NATS init');
+  // --------------------------
+
   const pluginsDir = process.env.FLUXER_PLUGIN_DIR || './plugins';
   console.log(`\x1b[34m[Loader] Discovering plugins in ${pluginsDir}...\x1b[0m`);
 
