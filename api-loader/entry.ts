@@ -1,3 +1,4 @@
+import { getUnfurlerService } from '../../fluxer_api/src/middleware/ServiceSingletons.js';
 import '../../fluxer_api/src/Instrument.js';
 import { createAPIApp } from '../../fluxer_api/src/api/App.js';
 import { initializeConfig } from '../../fluxer_api/src/api/Config.js';
@@ -115,6 +116,7 @@ async function main(): Promise<void> {
     if (plugin.module.init) {
       try {
         await plugin.module.init(plugin.context);
+
       } catch (err) {
         plugin.context.logger.error('Failed to run init hook:', err);
       }
@@ -123,6 +125,13 @@ async function main(): Promise<void> {
 
   // 13. Start service initialization
   await initialize();
+
+  // --- DEBUGGING ADDITION 2 ---
+  const unfurler = getUnfurlerService();
+  Logger.info({
+      unfurlerType: unfurler?.constructor.name
+  }, '[Loader] Debugging Unfurler Service');
+  // ----------------------------
 
   process.on('uncaughtException', (error) => {
     Logger.error({ error }, 'Uncaught exception');
