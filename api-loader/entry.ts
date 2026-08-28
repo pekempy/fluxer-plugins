@@ -1,4 +1,4 @@
-import { getUnfurlerService } from '../../fluxer_api/src/middleware/ServiceSingletons.js';
+import { getUnfurlerService } from '../../fluxer_api/src/api/middleware/ServiceSingletons.js';
 import '../../fluxer_api/src/Instrument.js';
 import { createAPIApp } from '../../fluxer_api/src/api/App.js';
 import { initializeConfig } from '../../fluxer_api/src/api/Config.js';
