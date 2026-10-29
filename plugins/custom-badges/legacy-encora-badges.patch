@@ -1,7 +1,7 @@
 diff --git a/encora-badges.js b/encora-badges.js
 --- a/encora-badges.js
 +++ b/encora-badges.js
-@@ -347,7 +347,49 @@
+@@ -347,7 +347,50 @@
    function injectIntoExistingBadgeContainers() {
      const containers = document.querySelectorAll(
        '[data-flx="user.user-profile-badges.div"], [class*="containerPopout"], [class*="containerModal"]'
@@ -40,6 +40,7 @@ diff --git a/encora-badges.js b/encora-badges.js
 +          width: 'fit-content',
 +          maxWidth: '100%',
 +          boxSizing: 'border-box',
++          marginTop: '0.5rem',
 +          padding: '0.25rem',
 +          marginLeft: 'auto',
 +          marginRight: '1.125rem',
@@ -51,7 +52,7 @@ diff --git a/encora-badges.js b/encora-badges.js
 +
        const userId = findUserIdForElement(container);
        if (!userId) return;
-@@ -429,8 +471,8 @@
+@@ -429,8 +472,8 @@
    function injectIntoModalsWithoutBadges() {
      const modals = document.querySelectorAll(
 -      '[data-flx*="user-profile-modal"], [class*="UserProfileModal"]'
@@ -62,7 +63,7 @@ diff --git a/encora-badges.js b/encora-badges.js
 -      if (modal.querySelector('[data-encora-badge]')) return;
 +      if (modal.querySelector('[data-encora-badge], [data-encora-badge-source="plugin-app"]')) return;
        if (modal.querySelector('[data-flx="user.user-profile-badges.div"], [class*="containerModal"]')) return;
-@@ -441,7 +483,8 @@
+@@ -441,7 +484,8 @@
        const badges = getBadgesForUser(userId);
        if (!badges.length) return;
  
@@ -73,7 +74,7 @@ diff --git a/encora-badges.js b/encora-badges.js
 +      if (!profileHeader || !actionButtons) return;
  
        remoteLog('CREATING_MODAL_CONTAINER', { idx, userId });
-@@ -449,17 +492,29 @@
+@@ -449,17 +493,30 @@
        const newContainer = document.createElement('div');
        newContainer.setAttribute('data-flx', 'user.user-profile-badges.div');
        newContainer.setAttribute('data-encora-injected-container', 'true');
@@ -85,6 +86,7 @@ diff --git a/encora-badges.js b/encora-badges.js
 +        justifyContent: 'center',
 +        alignSelf: 'flex-end',
 +        gap: '0.25rem',
++        marginTop: '0.5rem',
 +        width: 'fit-content',
 +        maxWidth: '100%',
 +        boxSizing: 'border-box',
@@ -111,5 +113,5 @@ diff --git a/server.js b/server.js
 @@ -1116,3 +1116,3 @@
          upstreamRes.on('end', () => {
 -          const scriptTag = '<script src="/custom-badges/encora-badges.js?v=2.3.0" defer></script>';
-+          const scriptTag = '<script src="/custom-badges/encora-badges.js?v=2.3.2" defer></script>';
++          const scriptTag = '<script src="/custom-badges/encora-badges.js?v=2.3.3" defer></script>';
           let modified = body;

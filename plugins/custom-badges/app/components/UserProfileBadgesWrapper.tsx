@@ -92,6 +92,7 @@ const UserProfileBadgesWrapper = wrapComponent<UserProfileBadgesProps>(({ Origin
     display: 'inline-flex',
     alignItems: 'center',
     gap: '0.25rem',
+    marginTop: '0.5rem',
     padding: '0.25rem',
     borderRadius: '0.375rem',
     background: 'color-mix(in srgb, var(--background-secondary, #2b2d31) 80%, transparent)',
