@@ -1,0 +1,79 @@
+diff --git a/encora-badges.js b/encora-badges.js
+--- a/encora-badges.js
++++ b/encora-badges.js
+@@ -347,7 +347,28 @@
+   function injectIntoExistingBadgeContainers() {
+     const containers = document.querySelectorAll(
+       '[data-flx="user.user-profile-badges.div"], [class*="containerPopout"], [class*="containerModal"]'
+     );
+     containers.forEach((container, idx) => {
++      if (container.closest('[data-flx="user.user-profile-modal.div"]')) {
++        const isActionBarSlot =
++          container.parentElement?.getAttribute('data-flx') ===
++          'user.user-profile-modal.profile-media-header.header';
++
++        if (!isActionBarSlot) {
++          container.querySelectorAll('[data-encora-badge]').forEach(el => el.remove());
++          return;
++        }
++
++        Object.assign(container.style, {
++          display: 'flex',
++          alignItems: 'center',
++          justifyContent: 'flex-end',
++          gap: '0.25rem',
++          width: '100%',
++          boxSizing: 'border-box',
++          paddingRight: '1.125rem'
++        });
++      }
++
+       const userId = findUserIdForElement(container);
+       if (!userId) return;
+@@ -429,4 +450,4 @@
+   function injectIntoModalsWithoutBadges() {
+     const modals = document.querySelectorAll(
+-      '[data-flx*="user-profile-modal"], [class*="UserProfileModal"]'
++      '[data-flx="user.user-profile-modal.div"]'
+     );
+@@ -441,7 +462,8 @@
+       const badges = getBadgesForUser(userId);
+       if (!badges.length) return;
+ 
+-      const wrapper = modal.querySelector('[data-flx*="badgesWrapper"], [class*="badgesWrapper"], [class*="nameRow"], header');
+-      if (!wrapper) return;
++      const profileHeader = modal.querySelector('[data-flx="user.user-profile-modal.profile-media-header.header"]');
++      const actionButtons = profileHeader?.querySelector('[data-flx^="user.user-profile-modal.render-action-buttons.div"]');
++      if (!profileHeader || !actionButtons) return;
+ 
+       remoteLog('CREATING_MODAL_CONTAINER', { idx, userId });
+@@ -449,15 +471,19 @@
+      const newContainer = document.createElement('div');
+      newContainer.setAttribute('data-flx', 'user.user-profile-badges.div');
+      newContainer.setAttribute('data-encora-injected-container', 'true');
+      Object.assign(newContainer.style, {
+        display: 'flex',
+        alignItems: 'center',
+-        gap: '0.25rem'
++        justifyContent: 'flex-end',
++        gap: '0.25rem',
++        width: '100%',
++        boxSizing: 'border-box',
++        paddingRight: '1.125rem'
+      });
+
+      for (const badge of badges) {
+        newContainer.appendChild(createBadgeElement(badge, newContainer));
+      }
+
+-      wrapper.appendChild(newContainer);
++      profileHeader.appendChild(newContainer);
+      remoteLog('MODAL_BADGES_INJECTED', { userId, count: badges.length });
+    });
+  }
+diff --git a/server.js b/server.js
+--- a/server.js
++++ b/server.js
+@@ -1117,1 +1117,1 @@
+-          const scriptTag = '<script src="/custom-badges/encora-badges.js?v=2.3.0" defer></script>';
++          const scriptTag = '<script src="/custom-badges/encora-badges.js?v=2.3.1" defer></script>';

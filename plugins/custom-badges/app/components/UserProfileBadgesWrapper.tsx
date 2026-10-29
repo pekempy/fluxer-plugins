@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { wrapComponent } from '@pekempy/fluxer-plugin-sdk/helpers/app';
 import styles from '@app/features/user/components/popouts/UserProfileBadges.module.css';
 import { Tooltip } from '@app/features/ui/tooltip/Tooltip';
@@ -25,6 +25,12 @@ const UserProfileBadgesWrapper = wrapComponent<UserProfileBadgesProps>(({ Origin
   const [customBadges, setCustomBadges] = useState<Badge[]>([]);
   const userId = props.user?.id;
 
+  const badgeContainerRef = useRef<HTMLDivElement>(null);
+  const isModal = !!props.isModal;
+  const isMobile = !!props.isMobile;
+  const [isProfileModalSlot, setIsProfileModalSlot] = useState(isModal);
+  const [isActionBarSlot, setIsActionBarSlot] = useState(false);
+
   useEffect(() => {
     if (!userId) return;
     let active = true;
@@ -43,12 +49,20 @@ const UserProfileBadgesWrapper = wrapComponent<UserProfileBadgesProps>(({ Origin
     };
   }, [userId]);
 
+  useEffect(() => {
+    const parentData = badgeContainerRef.current?.parentElement?.getAttribute('data-flx');
+    const isInProfileModal = isModal || !!parentData?.startsWith('user.user-profile-modal.');
+
+    setIsProfileModalSlot(isInProfileModal);
+    setIsActionBarSlot(
+      parentData === 'user.user-profile-modal.profile-media-header.header',
+    );
+  }, [customBadges.length, isModal, userId]);
+
   if (customBadges.length === 0) {
     return <OriginalComponent {...props} />;
   }
 
-  const isModal = !!props.isModal;
-  const isMobile = !!props.isMobile;
   const isDesktopInteractions = !isMobile;
 
   const containerClassName = isModal
@@ -56,6 +70,23 @@ const UserProfileBadgesWrapper = wrapComponent<UserProfileBadgesProps>(({ Origin
     : styles.containerPopout;
 
   const badgeClassName = isModal && isMobile ? styles.badgeMobile : styles.badgeDesktop;
+
+  const shouldRenderCustomBadges = !isProfileModalSlot || isActionBarSlot;
+  const actionBarContainerStyle: React.CSSProperties | undefined =
+    isProfileModalSlot && isActionBarSlot
+      ? {
+          position: 'static',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'flex-end',
+          gap: '0.25rem',
+          width: '100%',
+          boxSizing: 'border-box',
+          padding: '0 1.125rem 0 0',
+          background: 'transparent',
+          borderRadius: 0,
+        }
+      : undefined;
 
   const renderBadge = (badge: Badge, index: number) => {
     const badgeContent = (
@@ -101,7 +132,7 @@ const UserProfileBadgesWrapper = wrapComponent<UserProfileBadgesProps>(({ Origin
   };
 
   return (
-    <div className={containerClassName}>
+    <div ref={badgeContainerRef} className={containerClassName} style={actionBarContainerStyle}>
       <style>{`
         .custom-badges-container-override > div {
           position: static !important;
@@ -114,7 +145,7 @@ const UserProfileBadgesWrapper = wrapComponent<UserProfileBadgesProps>(({ Origin
       <div className="custom-badges-container-override" style={{ display: 'contents' }}>
         <OriginalComponent {...props} />
       </div>
-      {customBadges.map((badge, idx) => renderBadge(badge, idx))}
+      {shouldRenderCustomBadges && customBadges.map((badge, idx) => renderBadge(badge, idx))}
     </div>
   );
 });

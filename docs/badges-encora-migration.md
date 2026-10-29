@@ -55,4 +55,11 @@ Response mapping:
   ]
 }
 ```
-Both badges will display inline on the React frontend popout.
+Both badges display inline on the React frontend; full-profile placement is described below.
+
+## Full-profile badge placement
+
+The full-profile modal renders `UserProfileBadges` in multiple locations. The custom Encora badge belongs only in the `user.user-profile-modal.profile-media-header.header` slot, right-aligned beneath the Message/Add/More action buttons. The app wrapper and the production-sidecar patch enforce this placement and remove custom badges from the display-name and username rows.
+
+For the currently deployed legacy sidecar, apply `plugins/custom-badges/legacy-encora-badges.patch` to the plugin runtime (not Fluxer core), then run `repatch-plugins` to reload it. The patch also bumps the injected script URL to invalidate older clients.
+

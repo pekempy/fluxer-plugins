@@ -1,5 +1,5 @@
 name: "custom-badges"
-version: "1.0.0"
+version: "1.0.1"
 description: "Allows custom badges on user profiles (images, tooltips, URLs) managed via the admin dashboard."
 author: "pekempy"
 license: "MIT"
