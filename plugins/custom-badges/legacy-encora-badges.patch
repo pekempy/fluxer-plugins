@@ -47,7 +47,7 @@ diff --git a/encora-badges.js b/encora-badges.js
 +      if (!profileHeader || !actionButtons) return;
  
        remoteLog('CREATING_MODAL_CONTAINER', { idx, userId });
-@@ -449,15 +471,19 @@
+@@ -449,17 +471,21 @@
       const newContainer = document.createElement('div');
       newContainer.setAttribute('data-flx', 'user.user-profile-badges.div');
       newContainer.setAttribute('data-encora-injected-container', 'true');
@@ -74,6 +74,8 @@ diff --git a/encora-badges.js b/encora-badges.js
 diff --git a/server.js b/server.js
 --- a/server.js
 +++ b/server.js
-@@ -1117,1 +1117,1 @@
+@@ -1116,3 +1116,3 @@
+         upstreamRes.on('end', () => {
 -          const scriptTag = '<script src="/custom-badges/encora-badges.js?v=2.3.0" defer></script>';
 +          const scriptTag = '<script src="/custom-badges/encora-badges.js?v=2.3.1" defer></script>';
+          let modified = body;
