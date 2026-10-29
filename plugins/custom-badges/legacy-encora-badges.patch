@@ -1,19 +1,41 @@
 diff --git a/encora-badges.js b/encora-badges.js
 --- a/encora-badges.js
 +++ b/encora-badges.js
-@@ -347,7 +347,28 @@
+@@ -345,2 +345,19 @@
+   }
+ 
++  function createProfileBadgeGroup() {
++    const group = document.createElement('div');
++    group.setAttribute('data-encora-badge-group', 'true');
++    group.setAttribute('data-encora-badge-source', 'legacy');
++    Object.assign(group.style, {
++      display: 'inline-flex',
++      alignItems: 'center',
++      gap: '0.25rem',
++      padding: '0.25rem',
++      borderRadius: '0.375rem',
++      background: 'color-mix(in srgb, var(--background-secondary, #2b2d31) 80%, transparent)',
++      border: '1px solid var(--background-modifier-accent, rgba(255,255,255,0.08))',
++      boxSizing: 'border-box'
++    });
++    return group;
++  }
++
+@@ -347,7 +364,35 @@
    function injectIntoExistingBadgeContainers() {
      const containers = document.querySelectorAll(
        '[data-flx="user.user-profile-badges.div"], [class*="containerPopout"], [class*="containerModal"]'
      );
      containers.forEach((container, idx) => {
-+      if (container.closest('[data-flx="user.user-profile-modal.div"]')) {
-+        const isActionBarSlot =
-+          container.parentElement?.getAttribute('data-flx') ===
-+          'user.user-profile-modal.profile-media-header.header';
++      const inProfileModal = Boolean(container.closest('[data-flx="user.user-profile-modal.div"]'));
++      const isActionBarSlot =
++        inProfileModal &&
++        container.parentElement?.getAttribute('data-flx') ===
++        'user.user-profile-modal.profile-media-header.header';
 +
++      if (inProfileModal) {
 +        if (!isActionBarSlot) {
-+          container.querySelectorAll('[data-encora-badge]').forEach(el => el.remove());
++          container.querySelectorAll('[data-encora-badge-source="legacy"], [data-encora-badge]').forEach(el => el.remove());
 +          return;
 +        }
 +
@@ -21,22 +43,48 @@ diff --git a/encora-badges.js b/encora-badges.js
 +          display: 'flex',
 +          alignItems: 'center',
 +          justifyContent: 'flex-end',
-+          gap: '0.25rem',
 +          width: '100%',
 +          boxSizing: 'border-box',
 +          paddingRight: '1.125rem'
 +        });
 +      }
 +
++      const pluginAppBadgeGroup = container.querySelector('[data-encora-badge-source="plugin-app"]');
++      if (pluginAppBadgeGroup) {
++        container.querySelectorAll('[data-encora-badge-source="legacy"]').forEach(el => el.remove());
++        return;
++      }
++
        const userId = findUserIdForElement(container);
        if (!userId) return;
-@@ -429,4 +450,4 @@
+@@ -387,7 +432,9 @@
+       // Remove previously injected badges
+-      container.querySelectorAll('[data-encora-badge]').forEach(el => el.remove());
+-
+-      for (const badge of badges) {
+-        const badgeEl = createBadgeElement(badge, container);
+-        container.appendChild(badgeEl);
+-      }
++      container.querySelectorAll('[data-encora-badge-source="legacy"], [data-encora-badge]').forEach(el => el.remove());
++      const badgeTarget = isActionBarSlot ? createProfileBadgeGroup() : container;
++      if (isActionBarSlot) container.appendChild(badgeTarget);
++
++      for (const badge of badges) {
++        const badgeEl = createBadgeElement(badge, badgeTarget);
++        badgeTarget.appendChild(badgeEl);
++      }
+@@ -429,8 +476,8 @@
    function injectIntoModalsWithoutBadges() {
      const modals = document.querySelectorAll(
 -      '[data-flx*="user-profile-modal"], [class*="UserProfileModal"]'
 +      '[data-flx="user.user-profile-modal.div"]'
      );
-@@ -441,7 +462,8 @@
+ 
+     modals.forEach((modal, idx) => {
+-      if (modal.querySelector('[data-encora-badge]')) return;
++      if (modal.querySelector('[data-encora-badge], [data-encora-badge-source="plugin-app"]')) return;
+       if (modal.querySelector('[data-flx="user.user-profile-badges.div"], [class*="containerModal"]')) return;
+@@ -441,7 +488,8 @@
        const badges = getBadgesForUser(userId);
        if (!badges.length) return;
  
@@ -47,35 +95,38 @@ diff --git a/encora-badges.js b/encora-badges.js
 +      if (!profileHeader || !actionButtons) return;
  
        remoteLog('CREATING_MODAL_CONTAINER', { idx, userId });
-@@ -449,17 +471,21 @@
-      const newContainer = document.createElement('div');
-      newContainer.setAttribute('data-flx', 'user.user-profile-badges.div');
-      newContainer.setAttribute('data-encora-injected-container', 'true');
-      Object.assign(newContainer.style, {
-        display: 'flex',
-        alignItems: 'center',
+@@ -449,17 +497,23 @@
+       const newContainer = document.createElement('div');
+       newContainer.setAttribute('data-flx', 'user.user-profile-badges.div');
+       newContainer.setAttribute('data-encora-injected-container', 'true');
+       Object.assign(newContainer.style, {
+         display: 'flex',
+         alignItems: 'center',
 -        gap: '0.25rem'
 +        justifyContent: 'flex-end',
-+        gap: '0.25rem',
 +        width: '100%',
 +        boxSizing: 'border-box',
 +        paddingRight: '1.125rem'
-      });
-
-      for (const badge of badges) {
-        newContainer.appendChild(createBadgeElement(badge, newContainer));
-      }
-
+       });
+ 
++      const badgeGroup = createProfileBadgeGroup();
++      newContainer.appendChild(badgeGroup);
++
+       for (const badge of badges) {
+-        newContainer.appendChild(createBadgeElement(badge, newContainer));
++        badgeGroup.appendChild(createBadgeElement(badge, badgeGroup));
+       }
+ 
 -      wrapper.appendChild(newContainer);
 +      profileHeader.appendChild(newContainer);
-      remoteLog('MODAL_BADGES_INJECTED', { userId, count: badges.length });
-    });
-  }
+       remoteLog('MODAL_BADGES_INJECTED', { userId, count: badges.length });
+     });
+   }
 diff --git a/server.js b/server.js
 --- a/server.js
 +++ b/server.js
 @@ -1116,3 +1116,3 @@
          upstreamRes.on('end', () => {
 -          const scriptTag = '<script src="/custom-badges/encora-badges.js?v=2.3.0" defer></script>';
-+          const scriptTag = '<script src="/custom-badges/encora-badges.js?v=2.3.1" defer></script>';
++          const scriptTag = '<script src="/custom-badges/encora-badges.js?v=2.3.2" defer></script>';
           let modified = body;

@@ -88,6 +88,17 @@ const UserProfileBadgesWrapper = wrapComponent<UserProfileBadgesProps>(({ Origin
         }
       : undefined;
 
+  const profileBadgeGroupStyle: React.CSSProperties = {
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: '0.25rem',
+    padding: '0.25rem',
+    borderRadius: '0.375rem',
+    background: 'color-mix(in srgb, var(--background-secondary, #2b2d31) 80%, transparent)',
+    border: '1px solid var(--background-modifier-accent, rgba(255,255,255,0.08))',
+    boxSizing: 'border-box',
+  };
+
   const renderBadge = (badge: Badge, index: number) => {
     const badgeContent = (
       <img
@@ -145,7 +156,20 @@ const UserProfileBadgesWrapper = wrapComponent<UserProfileBadgesProps>(({ Origin
       <div className="custom-badges-container-override" style={{ display: 'contents' }}>
         <OriginalComponent {...props} />
       </div>
-      {shouldRenderCustomBadges && customBadges.map((badge, idx) => renderBadge(badge, idx))}
+      {shouldRenderCustomBadges &&
+        (isProfileModalSlot && isActionBarSlot ? (
+          <div
+            data-encora-badge-group="true"
+            data-encora-badge-source="plugin-app"
+            style={profileBadgeGroupStyle}
+          >
+            {customBadges.map((badge, idx) => renderBadge(badge, idx))}
+          </div>
+        ) : (
+          <div data-encora-badge-source="plugin-app" style={{ display: 'contents' }}>
+            {customBadges.map((badge, idx) => renderBadge(badge, idx))}
+          </div>
+        ))}
     </div>
   );
 });
