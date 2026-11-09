@@ -4,7 +4,7 @@ import { initializeConfig } from '../../fluxer_api/src/api/Config.js';
 import { initializeLogger } from '../../fluxer_api/src/api/Logger.js';
 import { Config } from '../../fluxer_api/src/Config.js';
 import { Logger } from '../../fluxer_api/src/Logger.js';
-import { createServer, setupGracefulShutdown } from '@fluxer/hono/src/Server.js';
+import { createServer, setupGracefulShutdown } from '../../fluxer_api/node_modules/@fluxer/hono/src/Server.js';
 
 import path from 'path';
 import { discoverPlugins } from './PluginDiscovery.js';
