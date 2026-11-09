@@ -32,6 +32,26 @@ export default createAdminApi({
           await saveConfigData(config);
         }
       }
+    } else if (action === 'update-badge') {
+      const userId = body.userId as string;
+      const badgeIndexRaw = body.badgeIndex as string;
+      const iconUrl = body.iconUrl as string;
+      const tooltip = body.tooltip as string;
+      const url = (body.url as string) || undefined;
+
+      if (!userId || badgeIndexRaw === undefined) {
+        return ctx.text('Missing User ID or badge index', 400);
+      }
+      if (!iconUrl || !tooltip) {
+        return ctx.text('Missing Icon URL or Tooltip', 400);
+      }
+
+      const badgeIndex = parseInt(badgeIndexRaw, 10);
+      const existing = config.badges[userId];
+      if (existing && existing[badgeIndex]) {
+        existing[badgeIndex] = { iconUrl, tooltip, url };
+        await saveConfigData(config);
+      }
     } else if (action === 'save-badge') {
       const userIdsRaw = (body.userIds as string || body.userId as string || '');
       const iconUrl = body.iconUrl as string;

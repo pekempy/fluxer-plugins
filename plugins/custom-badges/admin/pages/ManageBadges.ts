@@ -4,21 +4,58 @@ import { getConfigData, ConfigData, Badge, DomainMapping, getUserTags } from '..
 export function renderUserBadgesTable(badgesMap: Record<string, Badge[]>, userTagsMap: Record<string, string>): string {
   const entries = Object.entries(badgesMap);
   const rows = entries.map(([userId, badges]) => {
-    const badgeList = badges.map((b, bIdx) => `
-      <div class="inline-flex items-center gap-1 bg-gray-100 px-2 py-1 rounded text-xs border border-gray-200">
-        <img src="${b.iconUrl}" class="w-4 h-4 object-contain" />
-        <span class="font-medium">${b.tooltip}</span>
-        ${b.url ? `<a href="${b.url}" target="_blank" class="text-blue-500 hover:underline">🔗</a>` : ''}
-        <button class="text-red-400 hover:text-red-600 font-bold ml-1 hover:scale-110 transition-transform"
-                title="Remove badge"
-                hx-post="/admin/plugins/custom-badges/api/save"
-                hx-vals='{"userId": "${userId}", "badgeIndex": ${bIdx}, "action": "delete-individual"}'
-                hx-target="#badges-dashboard"
-                hx-swap="innerHTML">
-          ×
-        </button>
-      </div>
-    `).join(' ');
+    const badgeList = badges.map((b, bIdx) => {
+      const editId = `edit-badge-${userId.replace(/\D/g, '')}-${bIdx}`;
+      return `
+      <div class="inline-flex flex-col gap-1">
+        <div class="inline-flex items-center gap-1 bg-gray-100 px-2 py-1 rounded text-xs border border-gray-200">
+          <img src="${b.iconUrl}" class="w-4 h-4 object-contain" />
+          <span class="font-medium">${b.tooltip}</span>
+          ${b.url ? `<a href="${b.url}" target="_blank" class="text-blue-500 hover:underline">🔗</a>` : ''}
+          <button type="button"
+                  class="text-gray-400 hover:text-indigo-600 ml-1 hover:scale-110 transition-transform"
+                  title="Edit badge"
+                  onclick="document.getElementById('${editId}').classList.toggle('hidden')">✏</button>
+          <button class="text-red-400 hover:text-red-600 font-bold ml-1 hover:scale-110 transition-transform"
+                  title="Remove badge"
+                  hx-post="/admin/plugins/custom-badges/api/save"
+                  hx-vals='{"userId": "${userId}", "badgeIndex": ${bIdx}, "action": "delete-individual"}'
+                  hx-target="#badges-dashboard"
+                  hx-swap="innerHTML">×</button>
+        </div>
+        <form id="${editId}"
+              class="hidden bg-white border border-indigo-200 rounded p-2 space-y-1 shadow-sm w-56"
+              hx-post="/admin/plugins/custom-badges/api/save"
+              hx-target="#badges-dashboard"
+              hx-swap="innerHTML">
+          <input type="hidden" name="action" value="update-badge" />
+          <input type="hidden" name="userId" value="${userId}" />
+          <input type="hidden" name="badgeIndex" value="${bIdx}" />
+          <div>
+            <label class="block text-[10px] font-semibold text-gray-500 uppercase">Icon URL</label>
+            <input type="url" name="iconUrl" required value="${b.iconUrl}"
+                   class="mt-0.5 block w-full rounded border-gray-300 shadow-sm text-xs focus:border-indigo-500 focus:ring-indigo-500" />
+          </div>
+          <div>
+            <label class="block text-[10px] font-semibold text-gray-500 uppercase">Tooltip</label>
+            <input type="text" name="tooltip" required value="${b.tooltip}"
+                   class="mt-0.5 block w-full rounded border-gray-300 shadow-sm text-xs focus:border-indigo-500 focus:ring-indigo-500" />
+          </div>
+          <div>
+            <label class="block text-[10px] font-semibold text-gray-500 uppercase">Link URL (optional)</label>
+            <input type="url" name="url" value="${b.url || ''}"
+                   class="mt-0.5 block w-full rounded border-gray-300 shadow-sm text-xs focus:border-indigo-500 focus:ring-indigo-500" />
+          </div>
+          <div class="flex gap-1 pt-1">
+            <button type="submit"
+                    class="flex-1 py-1 px-2 rounded text-xs font-medium text-white bg-indigo-600 hover:bg-indigo-700">Save</button>
+            <button type="button"
+                    onclick="document.getElementById('${editId}').classList.add('hidden')"
+                    class="flex-1 py-1 px-2 rounded text-xs font-medium text-gray-600 bg-gray-100 hover:bg-gray-200">Cancel</button>
+          </div>
+        </form>
+      </div>`;
+    }).join(' ');
 
     return `
       <tr class="border-t border-gray-100 hover:bg-gray-50">
