@@ -1,10 +1,8 @@
 import { getUnfurlerService } from '../../fluxer_api/src/api/middleware/ServiceSingletons.js';
-import '../../fluxer_api/src/Instrument.js';
 import { createAPIApp } from '../../fluxer_api/src/api/App.js';
 import { initializeConfig } from '../../fluxer_api/src/api/Config.js';
 import { initializeLogger } from '../../fluxer_api/src/api/Logger.js';
 import { Config } from '../../fluxer_api/src/Config.js';
-import { shutdownInstrumentation } from '../../fluxer_api/src/Instrument.js';
 import { Logger } from '../../fluxer_api/src/Logger.js';
 import { createServer, setupGracefulShutdown } from '@fluxer/hono/src/Server.js';
 
@@ -183,7 +181,6 @@ async function main(): Promise<void> {
       }
       await closeHttpServer(server);
       await shutdown();
-      await shutdownInstrumentation();
     },
     { logger: Logger, timeoutMs: 30000 },
   );
