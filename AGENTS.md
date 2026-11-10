@@ -1,8 +1,14 @@
 # fluxer-plugins — Agent Notes
 
+## Plugin Philosophy (INVIOLABLE)
+- **Every plugin must be individual, self-contained, and independently deployable.** No shared state between plugins.
+- **Plugins MUST NOT modify upstream Fluxer code, images, or compose files.** All overrides go in `compose.plugins.yaml` only.
+- **Plugins must be shareable** — another Fluxer instance should be able to drop in a plugin folder and have it work.
+- **If a feature can be served cleanly via a backend API response modification, do that.** Remove any JS/client-side workarounds that duplicate it once confirmed working.
+- **No dead code.** When a backend approach replaces a client-side hack, delete the hack.
+
 ## What this is
 The **proper plugin SDK** for Prelude (`prelude.chat`). TypeScript plugins that load inside the Fluxer API/app process without modifying upstream Fluxer images.
-
 ## Active plugins
 | Plugin | Purpose | Status |
 |---|---|---|
